@@ -791,7 +791,7 @@ const Settings = {
       const ok2 = await Utils.confirm('Esta acción eliminará TODO lo guardado en el navegador y recargará Acadex. ¿Continuar?', 'Confirmar Acción Crítica');
       if (!ok2) return;
 
-      DB.reset();
+      await DB.reset();
       Utils.toast('Base de datos restablecida correctamente. Recargando Acadex...', 'success');
       setTimeout(() => {
         window.location.reload();

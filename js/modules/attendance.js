@@ -101,7 +101,7 @@ const Attendance = {
 
   renderPasarLista(content) {
     if (!this.selectedGrupo || !this.selectedMateria) {
-      content.innerHTML = '<div class="empty-state"><div class="empty-icon">${Icons.clipboard}</div><h3>Selecciona grupo y materia</h3><p>Usa el selector de arriba para cargar la lista</p></div>';
+      content.innerHTML = `<div class="empty-state"><div class="empty-icon">${Icons.clipboard}</div><h3>Selecciona grupo y materia</h3><p>Usa el selector de arriba para cargar la lista</p></div>`;
       return;
     }
     const estudiantes = DB.getEstudiantesByGrupo(this.selectedGrupo);
@@ -320,7 +320,7 @@ const Attendance = {
   renderCalendario(content) {
     const estudiantes = this.selectedGrupo ? DB.getEstudiantesByGrupo(this.selectedGrupo) : DB.getEstudiantes().filter(e=>e.activo).slice(0, 10);
     if (!estudiantes.length) {
-      content.innerHTML = '<div class="empty-state"><div class="empty-icon">${Icons.calendar}</div><h3>Selecciona un grupo</h3><p>Carga un grupo para ver el calendario</p></div>';
+      content.innerHTML = `<div class="empty-state"><div class="empty-icon">${Icons.calendar}</div><h3>Selecciona un grupo</h3><p>Carga un grupo para ver el calendario</p></div>`;
       return;
     }
 

@@ -351,7 +351,7 @@
   align-items: center;
   justify-content: center;
 }
-.modal.open { display: flex; }
+.modal.active { display: flex; }
 
 .modal-overlay {
   position: absolute;

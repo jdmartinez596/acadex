@@ -110,7 +110,7 @@ const Grades = {
     const user = DB.getUsuario(session.userId);
     const estId = user?.estudianteId || (session.rol === 'estudiante' ? session.userId : null);
     if (!estId) {
-      container.innerHTML = '<div class="empty-state"><div class="empty-icon">${Icons.fileText}</div><h3>Sin datos</h3><p>No se encontró información de estudiante</p></div>';
+      container.innerHTML = `<div class="empty-state"><div class="empty-icon">${Icons.fileText}</div><h3>Sin datos</h3><p>No se encontró información de estudiante</p></div>`;
       return;
     }
     const est = DB.getEstudiante(estId);
@@ -131,7 +131,7 @@ const Grades = {
             <td><div style="display:flex;align-items:center;gap:8px"><div style="width:10px;height:10px;border-radius:50%;background:${m.color}"></div><strong>${m.nombre}</strong></div></td>
             ${proms.map(p=>`<td style="font-weight:700;color:${p!==null?Utils.colorNota(p,config.escala.minAprobatorio):'var(--text-muted)'}">${p!==null?Utils.formatNota(p):'—'}</td>`).join('')}
             <td style="font-size:18px;font-weight:800;color:${pf!==null?Utils.colorNota(pf,config.escala.minAprobatorio):'var(--text-muted)'}">${pf!==null?Utils.formatNota(pf):'—'}</td>
-            <td>${pf!==null?(aprobado?'<span class="badge badge-success">${Icons.check} Aprobado</span>':'<span class="badge badge-danger">${Icons.error} Reprobado</span>'):'<span class="badge badge-neutral">Sin notas</span>'}</td>
+            <td>${pf!==null?(aprobado?'<span class="badge badge-success">'+Icons.check+' Aprobado</span>':'<span class="badge badge-danger">'+Icons.error+' Reprobado</span>'):'<span class="badge badge-neutral">Sin notas</span>'}</td>
           </tr>`;
         }).join('')}
         </tbody></table>
@@ -148,7 +148,7 @@ const Grades = {
     const tiposActividad = config.tiposActividad;
 
     if (!estudiantes.length) {
-      content.innerHTML = '<div class="empty-state"><div class="empty-icon">${Icons.users}</div><h3>Sin estudiantes</h3><p>El grupo seleccionado no tiene estudiantes registrados</p></div>';
+      content.innerHTML = `<div class="empty-state"><div class="empty-icon">${Icons.users}</div><h3>Sin estudiantes</h3><p>El grupo seleccionado no tiene estudiantes registrados</p></div>`;
       return;
     }
 
@@ -222,7 +222,7 @@ const Grades = {
                     <span class="prom-cell" style="font-size:18px;font-weight:800;color:${prom!==null?Utils.colorNota(prom,config.escala.minAprobatorio):'var(--text-muted)'}">${prom!==null?Utils.formatNota(prom):'—'}</span>
                   </td>
                   <td style="text-align:center">
-                    <span class="estado-cell">${prom!==null?(aprobado?'<span class="badge badge-success">${Icons.check}</span>':'<span class="badge badge-danger">${Icons.error}</span>'):'<span class="badge badge-neutral">—</span>'}</span>
+                    <span class="estado-cell">${prom!==null?(aprobado?'<span class="badge badge-success">'+Icons.check+'</span>':'<span class="badge badge-danger">'+Icons.error+'</span>'):'<span class="badge badge-neutral">—</span>'}</span>
                   </td>
                 </tr>`;
               }).join('')}
@@ -286,7 +286,7 @@ const Grades = {
     row.querySelector('.prom-cell').textContent = prom !== null ? Utils.formatNota(prom) : '—';
     row.querySelector('.prom-cell').style.color = prom !== null ? Utils.colorNota(prom, config.escala.minAprobatorio) : 'var(--text-muted)';
     const aprobado = prom !== null && prom >= config.escala.minAprobatorio;
-    row.querySelector('.estado-cell').innerHTML = prom !== null ? (aprobado ? '<span class="badge badge-success">${Icons.check}</span>' : '<span class="badge badge-danger">${Icons.error}</span>') : '<span class="badge badge-neutral">—</span>';
+    row.querySelector('.estado-cell').innerHTML = prom !== null ? (aprobado ? '<span class="badge badge-success">'+Icons.check+'</span>' : '<span class="badge badge-danger">'+Icons.error+'</span>') : '<span class="badge badge-neutral">—</span>';
   },
 
   guardarNotas(config) {
@@ -441,7 +441,7 @@ const Grades = {
     setTimeout(() => {
       const ctx1 = document.getElementById('chart-notas-materias');
       if (ctx1) new Chart(ctx1, {
-        type: 'horizontalBar',
+        type: 'bar',
         data: {
           labels: materias.map(m => m.nombre),
           datasets: [{ label: 'Promedio', data: promediosMat, backgroundColor: materias.map(m => m.color + 'CC'), borderColor: materias.map(m=>m.color), borderWidth: 2, borderRadius: 6 }]

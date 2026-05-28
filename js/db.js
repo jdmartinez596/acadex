@@ -39,6 +39,27 @@ const DB = {
     ];
     const results = await Promise.allSettled(loaders);
     results.forEach((r, i) => { if (r.status === 'rejected') console.warn('DB load error:', r.reason); });
+    // Fallback a localStorage si alguna tabla quedó vacía
+    this._loadFromLocalStorage();
+  },
+
+  _loadFromLocalStorage() {
+    const saved = localStorage.getItem('acadex_data');
+    if (!saved) return;
+    try {
+      const backup = JSON.parse(saved);
+      for (const key of Object.keys(this._data)) {
+        if (key === 'config' && !this._data.config && backup.config) {
+          this._data.config = backup.config;
+        } else if (Array.isArray(this._data[key]) && this._data[key].length === 0 && Array.isArray(backup[key]) && backup[key].length > 0) {
+          this._data[key] = backup[key];
+        }
+      }
+    } catch (e) { console.warn('localStorage fallback error:', e); }
+  },
+
+  _persistLocal() {
+    try { localStorage.setItem('acadex_data', JSON.stringify(this._data)); } catch (e) { /* quota exceeded, ignore */ }
   },
 
   async _loadTable(name, mapper, columns = '*') {
@@ -86,37 +107,48 @@ const DB = {
   _snakeObj(obj) {
     const out = {};
     for (const [k, v] of Object.entries(obj)) {
-      if (k === 'authId' || k === 'estudianteId') {
-        out[this._toSnake(k)] = v;
-      } else {
-        out[this._toSnake(k)] = v;
-      }
+      out[this._toSnake(k)] = v;
     }
     return out;
   },
 
+  async reset() {
+    const tables = ['config','usuarios','periodos','grados','grupos','materias','estudiantes','notas','asistencia','actividades','notificaciones'];
+    for (const t of tables) {
+      try { await supabase.from(t).delete().neq('id', t === 'config' ? '0' : ''); } catch (e) { console.warn('DB reset error:', t, e); }
+    }
+    Object.keys(this._data).forEach(k => {
+      if (Array.isArray(this._data[k])) this._data[k] = [];
+      else this._data[k] = null;
+    });
+    this._persistLocal();
+  },
+
   // ---- Helpers ----
-  _save() {},
 
   // ---- Config ----
   getConfig() { return this._data.config; },
-  updateConfig(key, value) {
+  async updateConfig(key, value) {
     this._data.config[key] = value;
-    supabase.from('config').update({ [this._toSnake(key)]: typeof value === 'object' ? JSON.stringify(value) : value }).eq('id', 1).then();
+    try { await supabase.from('config').update({ [this._toSnake(key)]: typeof value === 'object' ? JSON.stringify(value) : value }).eq('id', 1); } catch (e) { console.warn('updateConfig error:', e); }
+    this._persistLocal();
   },
-  updateInstitucion(data) {
+  async updateInstitucion(data) {
     const inst = { ...this._data.config.institucion, ...data };
     this._data.config.institucion = inst;
-    supabase.from('config').update({ institucion: JSON.stringify(inst) }).eq('id', 1).then();
+    try { await supabase.from('config').update({ institucion: JSON.stringify(inst) }).eq('id', 1); } catch (e) { console.warn('updateInstitucion error:', e); }
+    this._persistLocal();
   },
-  updateEscala(data) {
+  async updateEscala(data) {
     const esc = { ...this._data.config.escala, ...data };
     this._data.config.escala = esc;
-    supabase.from('config').update({ escala: JSON.stringify(esc) }).eq('id', 1).then();
+    try { await supabase.from('config').update({ escala: JSON.stringify(esc) }).eq('id', 1); } catch (e) { console.warn('updateEscala error:', e); }
+    this._persistLocal();
   },
-  updateTiposActividad(tipos) {
+  async updateTiposActividad(tipos) {
     this._data.config.tiposActividad = tipos;
-    supabase.from('config').update({ tipos_actividad: JSON.stringify(tipos) }).eq('id', 1).then();
+    try { await supabase.from('config').update({ tipos_actividad: JSON.stringify(tipos) }).eq('id', 1); } catch (e) { console.warn('updateTiposActividad error:', e); }
+    this._persistLocal();
   },
 
   // ---- Usuarios ----
@@ -126,18 +158,22 @@ const DB = {
   async addUsuario(u) {
     u.id = 'u' + Date.now();
     u.creado = new Date().toISOString().split('T')[0];
+    const { error } = await supabase.from('usuarios').insert(this._snakeObj(u));
+    if (error) throw new Error('Error al crear usuario: ' + (error.message || JSON.stringify(error)));
     this._data.usuarios.push(u);
-    await supabase.from('usuarios').insert(this._snakeObj(u));
+    this._persistLocal();
     return u;
   },
   async updateUsuario(id, data) {
+    await supabase.from('usuarios').update(this._snakeObj(data)).eq('id', id);
     const idx = this._data.usuarios.findIndex(u => u.id === id);
     if (idx > -1) { this._data.usuarios[idx] = { ...this._data.usuarios[idx], ...data }; }
-    await supabase.from('usuarios').update(this._snakeObj(data)).eq('id', id);
+    this._persistLocal();
   },
   async deleteUsuario(id) {
-    this._data.usuarios = this._data.usuarios.filter(u => u.id !== id);
     await supabase.from('usuarios').delete().eq('id', id);
+    this._data.usuarios = this._data.usuarios.filter(u => u.id !== id);
+    this._persistLocal();
   },
 
   // ---- Períodos ----
@@ -146,18 +182,22 @@ const DB = {
   getPeriodoActivo() { return this._data.periodos.find(p => p.activo); },
   async addPeriodo(p) {
     p.id = 'p' + Date.now();
+    const { error } = await supabase.from('periodos').insert(this._snakeObj(p));
+    if (error) throw new Error('Error al crear período: ' + (error.message || JSON.stringify(error)));
     this._data.periodos.push(p);
-    await supabase.from('periodos').insert(this._snakeObj(p));
+    this._persistLocal();
     return p;
   },
   async updatePeriodo(id, data) {
+    await supabase.from('periodos').update(this._snakeObj(data)).eq('id', id);
     const idx = this._data.periodos.findIndex(p => p.id === id);
     if (idx > -1) { this._data.periodos[idx] = { ...this._data.periodos[idx], ...data }; }
-    await supabase.from('periodos').update(this._snakeObj(data)).eq('id', id);
+    this._persistLocal();
   },
   async deletePeriodo(id) {
-    this._data.periodos = this._data.periodos.filter(p => p.id !== id);
     await supabase.from('periodos').delete().eq('id', id);
+    this._data.periodos = this._data.periodos.filter(p => p.id !== id);
+    this._persistLocal();
   },
 
   // ---- Grados ----
@@ -165,20 +205,24 @@ const DB = {
   getGrado(id) { return this._data.grados.find(g => g.id === id); },
   async addGrado(g) {
     g.id = 'g' + Date.now();
+    const { error } = await supabase.from('grados').insert(this._snakeObj(g));
+    if (error) throw new Error('Error al crear grado: ' + (error.message || JSON.stringify(error)));
     this._data.grados.push(g);
-    await supabase.from('grados').insert(this._snakeObj(g));
+    this._persistLocal();
     return g;
   },
   async updateGrado(id, data) {
+    await supabase.from('grados').update(this._snakeObj(data)).eq('id', id);
     const idx = this._data.grados.findIndex(g => g.id === id);
     if (idx > -1) { this._data.grados[idx] = { ...this._data.grados[idx], ...data }; }
-    await supabase.from('grados').update(this._snakeObj(data)).eq('id', id);
+    this._persistLocal();
   },
   async deleteGrado(id) {
-    this._data.grados = this._data.grados.filter(g => g.id !== id);
-    this._data.grupos = this._data.grupos.filter(gr => gr.gradoId !== id);
     await supabase.from('grados').delete().eq('id', id);
     await supabase.from('grupos').delete().eq('grado_id', id);
+    this._data.grados = this._data.grados.filter(g => g.id !== id);
+    this._data.grupos = this._data.grupos.filter(gr => gr.gradoId !== id);
+    this._persistLocal();
   },
 
   // ---- Grupos ----
@@ -187,18 +231,22 @@ const DB = {
   getGruposByGrado(gradoId) { return this._data.grupos.filter(g => g.gradoId === gradoId); },
   async addGrupo(g) {
     g.id = 'gr' + Date.now();
+    const { error } = await supabase.from('grupos').insert(this._snakeObj(g));
+    if (error) throw new Error('Error al crear grupo: ' + (error.message || JSON.stringify(error)));
     this._data.grupos.push(g);
-    await supabase.from('grupos').insert(this._snakeObj(g));
+    this._persistLocal();
     return g;
   },
   async updateGrupo(id, data) {
+    await supabase.from('grupos').update(this._snakeObj(data)).eq('id', id);
     const idx = this._data.grupos.findIndex(g => g.id === id);
     if (idx > -1) { this._data.grupos[idx] = { ...this._data.grupos[idx], ...data }; }
-    await supabase.from('grupos').update(this._snakeObj(data)).eq('id', id);
+    this._persistLocal();
   },
   async deleteGrupo(id) {
-    this._data.grupos = this._data.grupos.filter(g => g.id !== id);
     await supabase.from('grupos').delete().eq('id', id);
+    this._data.grupos = this._data.grupos.filter(g => g.id !== id);
+    this._persistLocal();
   },
 
   // ---- Materias ----
@@ -208,18 +256,22 @@ const DB = {
   getMateriasByDocente(docenteId) { return this._data.materias.filter(m => m.docenteId === docenteId); },
   async addMateria(m) {
     m.id = 'm' + Date.now();
+    const { error } = await supabase.from('materias').insert(this._snakeObj(m));
+    if (error) throw new Error('Error al crear materia: ' + (error.message || JSON.stringify(error)));
     this._data.materias.push(m);
-    await supabase.from('materias').insert(this._snakeObj(m));
+    this._persistLocal();
     return m;
   },
   async updateMateria(id, data) {
+    await supabase.from('materias').update(this._snakeObj(data)).eq('id', id);
     const idx = this._data.materias.findIndex(m => m.id === id);
     if (idx > -1) { this._data.materias[idx] = { ...this._data.materias[idx], ...data }; }
-    await supabase.from('materias').update(this._snakeObj(data)).eq('id', id);
+    this._persistLocal();
   },
   async deleteMateria(id) {
-    this._data.materias = this._data.materias.filter(m => m.id !== id);
     await supabase.from('materias').delete().eq('id', id);
+    this._data.materias = this._data.materias.filter(m => m.id !== id);
+    this._persistLocal();
   },
 
   // ---- Estudiantes ----
@@ -232,10 +284,11 @@ const DB = {
     e.id = 'e' + Date.now();
     e.creado = new Date().toISOString().split('T')[0];
     e.activo = true;
-    this._data.estudiantes.push(e);
     const snake = this._snakeObj(e);
     if (typeof e.acudiente === 'object') snake.acudiente = JSON.stringify(snake.acudiente);
-    await supabase.from('estudiantes').insert(snake);
+    const { error: estError } = await supabase.from('estudiantes').insert(snake);
+    if (estError) throw new Error('Error al guardar estudiante: ' + (estError.message || JSON.stringify(estError)));
+    this._data.estudiantes.push(e);
     // Crear usuario automáticamente
     const usuario = {
       id: 'u_' + e.id,
@@ -248,18 +301,21 @@ const DB = {
       estudiante_id: e.id,
       activo: true
     };
+    const { error: userError } = await supabase.from('usuarios').insert(this._snakeObj(usuario));
+    if (userError) console.warn('Usuario creado en caché local pero error en Supabase:', userError);
     this._data.usuarios.push(usuario);
-    await supabase.from('usuarios').insert(this._snakeObj(usuario));
+    this._persistLocal();
     return e;
   },
   async updateEstudiante(id, data) {
-    const idx = this._data.estudiantes.findIndex(e => e.id === id);
-    if (idx > -1) { this._data.estudiantes[idx] = { ...this._data.estudiantes[idx], ...data }; }
     const snake = this._snakeObj(data);
     if (typeof data.acudiente === 'object') snake.acudiente = JSON.stringify(data.acudiente);
-    await supabase.from('estudiantes').update(snake).eq('id', id);
+    const { error } = await supabase.from('estudiantes').update(snake).eq('id', id);
+    if (error) throw new Error('Error al actualizar: ' + (error.message || JSON.stringify(error)));
+    const idx = this._data.estudiantes.findIndex(e => e.id === id);
+    if (idx > -1) { this._data.estudiantes[idx] = { ...this._data.estudiantes[idx], ...data }; }
     // Sincronizar usuario del estudiante
-    const usuario = this._data.usuarios.find(u => u.estudiante_id === id);
+    const usuario = this._data.usuarios.find(u => (u.estudiante_id || u.estudianteId) === id);
     if (usuario) {
       const syncData = {};
       if (data.nombre) syncData.nombre = data.nombre;
@@ -268,19 +324,21 @@ const DB = {
       if (data.email) syncData.email = data.email;
       if (data.activo !== undefined) syncData.activo = data.activo;
       Object.assign(usuario, syncData);
-      await supabase.from('usuarios').update(this._snakeObj(syncData)).eq('estudiante_id', id);
+      await supabase.from('usuarios').update(this._snakeObj(syncData)).eq('estudiante_id', id).catch(e => console.warn('Error syncing user:', e));
     }
+    this._persistLocal();
   },
   async deleteEstudiante(id) {
+    await supabase.from('estudiantes').update({ activo: false }).eq('id', id);
     const idx = this._data.estudiantes.findIndex(e => e.id === id);
     if (idx > -1) { this._data.estudiantes[idx].activo = false; }
-    await supabase.from('estudiantes').update({ activo: false }).eq('id', id);
     // Desactivar usuario del estudiante
-    const usuario = this._data.usuarios.find(u => u.estudianteId === id);
+    const usuario = this._data.usuarios.find(u => (u.estudiante_id || u.estudianteId) === id);
     if (usuario) {
       usuario.activo = false;
-      await supabase.from('usuarios').update({ activo: false }).eq('estudiante_id', id);
+      await supabase.from('usuarios').update({ activo: false }).eq('estudiante_id', id).catch(e => console.warn('Error disabling user:', e));
     }
+    this._persistLocal();
   },
 
   // ---- Notas ----
@@ -295,18 +353,22 @@ const DB = {
   },
   async addNota(n) {
     n.id = 'n' + Date.now() + Math.random().toString(36).substr(2, 5);
+    const { error } = await supabase.from('notas').insert(this._snakeObj(n));
+    if (error) throw new Error('Error al guardar nota: ' + (error.message || JSON.stringify(error)));
     this._data.notas.push(n);
-    await supabase.from('notas').insert(this._snakeObj(n));
+    this._persistLocal();
     return n;
   },
   async updateNota(id, data) {
+    await supabase.from('notas').update(this._snakeObj(data)).eq('id', id);
     const idx = this._data.notas.findIndex(n => n.id === id);
     if (idx > -1) { this._data.notas[idx] = { ...this._data.notas[idx], ...data }; }
-    await supabase.from('notas').update(this._snakeObj(data)).eq('id', id);
+    this._persistLocal();
   },
   async deleteNota(id) {
-    this._data.notas = this._data.notas.filter(n => n.id !== id);
     await supabase.from('notas').delete().eq('id', id);
+    this._data.notas = this._data.notas.filter(n => n.id !== id);
+    this._persistLocal();
   },
 
   calcularPromedioPeriodo(estudianteId, materiaId, periodoId) {
@@ -348,14 +410,17 @@ const DB = {
   async setAsistencia(estudianteId, materiaId, grupoId, fecha, estado, justificacion = null) {
     const existing = this._data.asistencia.find(a => a.estudianteId === estudianteId && a.materiaId === materiaId && a.fecha === fecha);
     if (existing) {
+      const { error } = await supabase.from('asistencia').update({ estado, justificacion }).eq('id', existing.id);
+      if (error) throw new Error('Error al actualizar asistencia: ' + (error.message || JSON.stringify(error)));
       existing.estado = estado;
       existing.justificacion = justificacion;
-      await supabase.from('asistencia').update({ estado, justificacion }).eq('id', existing.id);
     } else {
       const id = 'a' + Date.now() + Math.random().toString(36).substr(2, 5);
+      const { error } = await supabase.from('asistencia').insert({ id, estudiante_id: estudianteId, materia_id: materiaId, grupo_id: grupoId, fecha, estado, justificacion });
+      if (error) throw new Error('Error al guardar asistencia: ' + (error.message || JSON.stringify(error)));
       this._data.asistencia.push({ id, estudianteId, materiaId, grupoId, fecha, estado, justificacion });
-      await supabase.from('asistencia').insert({ id, estudiante_id: estudianteId, materia_id: materiaId, grupo_id: grupoId, fecha, estado, justificacion });
     }
+    this._persistLocal();
   },
   calcularPorcentajeAsistencia(estudianteId, materiaId) {
     const reg = materiaId ? this._data.asistencia.filter(a => a.estudianteId === estudianteId && a.materiaId === materiaId)
@@ -369,34 +434,40 @@ const DB = {
   getActividades() { return this._data.actividades; },
   async addActividad(a) {
     a.id = 'act' + Date.now();
+    const { error } = await supabase.from('actividades').insert(this._snakeObj(a));
+    if (error) throw new Error('Error al crear actividad: ' + (error.message || JSON.stringify(error)));
     this._data.actividades.push(a);
-    await supabase.from('actividades').insert(this._snakeObj(a));
+    this._persistLocal();
     return a;
   },
   async deleteActividad(id) {
-    this._data.actividades = this._data.actividades.filter(a => a.id !== id);
     await supabase.from('actividades').delete().eq('id', id);
+    this._data.actividades = this._data.actividades.filter(a => a.id !== id);
+    this._persistLocal();
   },
 
   // ---- Notificaciones ----
   getNotificaciones(usuarioId) { return (this._data.notificaciones || []).filter(n => !usuarioId || n.usuarioId === usuarioId); },
   getNotificacionesNoLeidas(usuarioId) { return this.getNotificaciones(usuarioId).filter(n => !n.leida); },
   async marcarLeida(id) {
-    const n = this._data.notificaciones.find(n => n.id === id);
-    if (n) { n.leida = true; }
-    await supabase.from('notificaciones').update({ leida: true }).eq('id', id);
+    const { error } = await supabase.from('notificaciones').update({ leida: true }).eq('id', id);
+    if (!error) { const n = this._data.notificaciones.find(n => n.id === id); if (n) n.leida = true; }
+    this._persistLocal();
   },
   async marcarTodasLeidas(usuarioId) {
-    this._data.notificaciones.filter(n => n.usuarioId === usuarioId).forEach(n => n.leida = true);
     await supabase.from('notificaciones').update({ leida: true }).eq('usuario_id', usuarioId);
+    this._data.notificaciones.filter(n => n.usuarioId === usuarioId).forEach(n => n.leida = true);
+    this._persistLocal();
   },
   async addNotificacion(n) {
     n.id = 'not' + Date.now();
     n.fecha = new Date().toISOString().split('T')[0];
     n.leida = false;
     if (!this._data.notificaciones) this._data.notificaciones = [];
+    const { error } = await supabase.from('notificaciones').insert(this._snakeObj(n));
+    if (error) throw new Error('Error al crear notificación: ' + (error.message || JSON.stringify(error)));
     this._data.notificaciones.unshift(n);
-    await supabase.from('notificaciones').insert(this._snakeObj(n));
+    this._persistLocal();
   },
 
   // ---- Stats para Dashboard ----

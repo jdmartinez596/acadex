@@ -624,3 +624,14 @@ select.form-control { cursor: pointer; }
 .file-drop-zone .drop-icon { font-size: 40px; margin-bottom: 12px; }
 .file-drop-zone p { font-size: var(--font-size-sm); color: var(--tx-2); }
 .file-drop-zone span { color: var(--primary); font-weight: 600; cursor: pointer; }
+
+/* Timeline */
+.timeline { position: relative; padding-left: 28px; }
+.timeline::before { content: ''; position: absolute; left: 8px; top: 0; bottom: 0; width: 2px; background: var(--bd-1); }
+.timeline-item { position: relative; padding-bottom: 20px; }
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-dot { position: absolute; left: -22px; top: 4px; width: 14px; height: 14px; border-radius: 50%; border: 3px solid var(--bg-card); box-shadow: 0 0 0 2px currentColor; }
+.timeline-content { padding: 8px 12px; background: var(--bg-01); border-radius: var(--r-sm); border: 1px solid var(--bd-1); }
+.timeline-date { font-size: 11px; color: var(--tx-3); font-weight: 500; margin-bottom: 2px; }
+.timeline-title { font-size: 13px; font-weight: 600; }
+.timeline-desc { font-size: 12px; color: var(--tx-2); margin-top: 4px; }

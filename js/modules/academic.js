@@ -100,7 +100,7 @@ const Academic = {
             </div>
           </div>`;
         }).join('')}
-        ${!grados.length ? '<div class="empty-state"><div class="empty-icon">${Icons.cap}</div><h3>Sin grados</h3><p>Agrega el primer grado académico</p></div>' : ''}
+        ${!grados.length ? `<div class="empty-state"><div class="empty-icon">${Icons.cap}</div><h3>Sin grados</h3><p>Agrega el primer grado académico</p></div>` : ''}
       </div>`;
   },
 
@@ -231,13 +231,13 @@ const Academic = {
             </div>
           </div>`;
         }).join('')}
-        ${!periodos.length ? '<div class="empty-state"><div class="empty-icon">${Icons.calendar}</div><h3>Sin períodos</h3><p>Crea el primer período académico</p></div>' : ''}
+        ${!periodos.length ? `<div class="empty-state"><div class="empty-icon">${Icons.calendar}</div><h3>Sin períodos</h3><p>Crea el primer período académico</p></div>` : ''}
       </div>`;
   },
 
   renderActividades(container, session) {
     const actividades = DB.getActividades().sort((a,b) => a.fecha.localeCompare(b.fecha));
-    const tiposIcon = { examen:'${Icons.fileText}', proyecto:'🗂️', exposicion:'${Icons.cap}', quiz:'${Icons.edit}', tarea:'${Icons.mapPin}' };
+    const tiposIcon = { examen: Icons.fileText, proyecto:'🗂️', exposicion: Icons.cap, quiz: Icons.edit, tarea: Icons.mapPin };
     container.innerHTML = `
       <div class="table-wrapper animate-fadeIn">
         <table><thead><tr>
@@ -250,7 +250,7 @@ const Academic = {
           return `<tr>
             <td><strong>${a.titulo}</strong><div style="font-size:12px;color:var(--text-muted)">${a.descripcion||''}</div></td>
             <td>${Utils.formatFecha(a.fecha)}</td>
-            <td>${tiposIcon[a.tipo]||'${Icons.mapPin}'} ${a.tipo}</td>
+            <td>${tiposIcon[a.tipo]||Icons.mapPin} ${a.tipo}</td>
             <td>${grado?.nombre||'—'}</td>
             <td>${grupo?.nombre||'—'}</td>
             <td>${materia?.nombre||'—'}</td>

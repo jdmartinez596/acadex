@@ -14,9 +14,11 @@ const Reports = {
         </div>
         <div class="tabs">
           <button class="tab-btn active" data-tab="boletin">${Icons.fileText} Boletín de Notas</button>
+          <button class="tab-btn" data-tab="asistencia">${Icons.calendar} Asistencia Mensual</button>
           <button class="tab-btn" data-tab="ranking">${Icons.trophy} Ranking</button>
           <button class="tab-btn" data-tab="riesgo">${Icons.warning} Riesgo Académico</button>
           <button class="tab-btn" data-tab="estadisticas">${Icons.chart} Estadísticas</button>
+          <button class="tab-btn" data-tab="historial">${Icons.clock} Historial Académico</button>
         </div>
         <div id="reports-content" class="animate-fadeIn"></div>
       </div>`;
@@ -37,9 +39,11 @@ const Reports = {
     const content = document.getElementById('reports-content');
     switch(tab) {
       case 'boletin':      this.renderBoletin(content); break;
+      case 'asistencia':   this.renderAsistencia(content); break;
       case 'ranking':      this.renderRanking(content); break;
       case 'riesgo':       this.renderRiesgo(content); break;
       case 'estadisticas': this.renderEstadisticas(content); break;
+      case 'historial':    this.renderHistorial(content); break;
     }
   },
 
@@ -125,7 +129,7 @@ const Reports = {
           <h2>${inst.nombre}</h2>
           <p>${inst.direccion} · ${inst.telefono}</p>
           <div style="margin-top:12px;font-size:18px;font-weight:800;letter-spacing:2px">BOLETÍN DE CALIFICACIONES</div>
-          <div style="font-size:14px;opacity:.8;margin-top:4px">${periodosAMostrar.map(p=>p.nombre).join(' · ')} · ${periodosAMostrar[0]?.año||new Date().getFullYear()}</div>
+          <div style="font-size:14px;opacity:.8;margin-top:4px">${periodosAMostrar.map(p=>p.nombre).join(' · ')} · ${periodosAMostrar[0]?.anio||new Date().getFullYear()}</div>
         </div>
 
         <!-- Info estudiante -->
@@ -174,14 +178,14 @@ const Reports = {
                 </td>
                 ${r.promedios.map(p=>`<td style="text-align:center;font-weight:700;color:${p!==null?Utils.colorNota(p,config.escala.minAprobatorio):'var(--text-muted)'}">${p!==null?Utils.formatNota(p):'—'}</td>`).join('')}
                 <td style="text-align:center;font-size:18px;font-weight:800;color:${r.pf!==null?Utils.colorNota(r.pf,config.escala.minAprobatorio):'var(--text-muted)'}">${r.pf!==null?Utils.formatNota(r.pf):'—'}</td>
-                <td style="text-align:center">${r.pf!==null?(r.aprobado?'<span class="badge badge-success">${Icons.check} Aprobado</span>':'<span class="badge badge-danger">${Icons.error} Reprobado</span>'):'<span class="badge badge-neutral">Sin notas</span>'}</td>
+                <td style="text-align:center">${r.pf!==null?(r.aprobado?'<span class="badge badge-success">'+Icons.check+' Aprobado</span>':'<span class="badge badge-danger">'+Icons.error+' Reprobado</span>'):'<span class="badge badge-neutral">Sin notas</span>'}</td>
               </tr>`).join('')}
             </tbody>
             <tfoot>
               <tr style="background:var(--primary);color:white">
                 <td colspan="${periodosAMostrar.length+1}"><strong>PROMEDIO GENERAL</strong></td>
                 <td style="text-align:center;font-size:18px;font-weight:800">${promedioFinal!==null?Utils.formatNota(promedioFinal):'—'}</td>
-                <td style="text-align:center">${promedioFinal!==null?(promedioFinal>=config.escala.minAprobatorio?'<span style="background:rgba(46,204,113,.3);padding:3px 8px;border-radius:10px;font-size:12px">${Icons.check} Promovido</span>':'<span style="background:rgba(231,76,60,.3);padding:3px 8px;border-radius:10px;font-size:12px">${Icons.error} En riesgo</span>'):'—'}</td>
+                <td style="text-align:center">${promedioFinal!==null?(promedioFinal>=config.escala.minAprobatorio?'<span style="background:rgba(46,204,113,.3);padding:3px 8px;border-radius:10px;font-size:12px">'+Icons.check+' Promovido</span>':'<span style="background:rgba(231,76,60,.3);padding:3px 8px;border-radius:10px;font-size:12px">'+Icons.error+' En riesgo</span>'):'—'}</td>
               </tr>
             </tfoot>
           </table>
@@ -336,7 +340,7 @@ const Reports = {
               </div>
             </td>
             <td><strong style="color:${Utils.colorAsistencia(e.asistencia)}">${e.asistencia}%</strong></td>
-            <td>${e.promedio>=config.escala.minAprobatorio?'<span class="badge badge-success">${Icons.check} Aprobado</span>':'<span class="badge badge-danger">${Icons.error} Reprobado</span>'}</td>
+            <td>${e.promedio>=config.escala.minAprobatorio?'<span class="badge badge-success">'+Icons.check+' Aprobado</span>':'<span class="badge badge-danger">'+Icons.error+' Reprobado</span>'}</td>
           </tr>`;
         }).join('')}
         ${!ranked.length?'<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-muted)">Sin datos de notas disponibles</td></tr>':''}
@@ -478,15 +482,18 @@ const Reports = {
         options: { responsive: true, plugins: { legend: { position:'right', labels: { font:{size:11} } } } }
       });
 
-      // Comparativo materias
-      const mats10 = DB.getMateriasByGrado('g10').slice(0,6);
+      // Comparativo materias (usar primer grado/grupo disponible)
+      const primerGrado = DB.getGrados()[0];
+      const primerGrupo = primerGrado ? DB.getGruposByGrado(primerGrado.id)[0] : null;
+      const mats10 = primerGrado ? DB.getMateriasByGrado(primerGrado.id).slice(0,6) : [];
       const per = DB.getPeriodos();
       const datasets = per.map((p, i) => {
         const colors = ['rgba(30,58,95,.8)','rgba(46,204,113,.8)','rgba(243,156,18,.8)'];
         return {
           label: p.nombre,
           data: mats10.map(m => {
-            const ests = DB.getEstudiantesByGrupo('gr10A');
+            const grupoId = primerGrupo?.id;
+            const ests = grupoId ? DB.getEstudiantesByGrupo(grupoId) : [];
             let t=0,c=0;
             ests.forEach(e => { const pv=DB.calcularPromedioPeriodo(e.id,m.id,p.id); if(pv!==null){t+=pv;c++;} });
             return c>0?Math.round((t/c)*100)/100:0;
@@ -502,6 +509,278 @@ const Reports = {
         options: { responsive: true, scales: { y: { min:0, max:10 } } }
       });
     }, 150);
+  },
+
+  renderAsistencia(content) {
+    const grupos = DB.getGrupos();
+    const config = DB.getConfig();
+    const hoy = new Date();
+    const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+    content.innerHTML = `
+      <div class="animate-fadeIn">
+        <div class="card" style="margin-bottom:20px">
+          <div class="card-body" style="padding:16px">
+            <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap">
+              <div class="form-group" style="margin:0">
+                <label>Grupo</label>
+                <select class="form-control" id="asist-grupo">
+                  <option value="">Todos los grupos</option>
+                  ${grupos.map(g=>`<option value="${g.id}">${g.nombre} (${DB.getGrado(g.gradoId)?.nombre||''})</option>`).join('')}
+                </select>
+              </div>
+              <div class="form-group" style="margin:0">
+                <label>Mes</label>
+                <select class="form-control" id="asist-mes">
+                  ${meses.map((m,i)=>`<option value="${i}" ${i===hoy.getMonth()?'selected':''}>${m}</option>`).join('')}
+                </select>
+              </div>
+              <div class="form-group" style="margin:0">
+                <label>Año</label>
+                <select class="form-control" id="asist-anio">
+                  ${[hoy.getFullYear()-1, hoy.getFullYear()].map(a=>`<option value="${a}" ${a===hoy.getFullYear()?'selected':''}>${a}</option>`).join('')}
+                </select>
+              </div>
+              <button class="btn btn-primary" id="btn-generar-asistencia">${Icons.calendar} Generar Reporte</button>
+              <button class="btn btn-outline" id="btn-exportar-asistencia">${Icons.download} Exportar</button>
+            </div>
+          </div>
+        </div>
+        <div id="asistencia-display"></div>
+      </div>`;
+
+    const generar = () => {
+      const grupoId = document.getElementById('asist-grupo').value;
+      const mes = parseInt(document.getElementById('asist-mes').value);
+      const anio = parseInt(document.getElementById('asist-anio').value);
+      const estudiantes = grupoId ? DB.getEstudiantesByGrupo(grupoId) : DB.getEstudiantes().filter(e=>e.activo);
+      const diasDelMes = new Date(anio, mes + 1, 0).getDate();
+
+      const data = estudiantes.map(est => {
+        const registros = DB.getAsistencia().filter(a => {
+          if (a.estudianteId !== est.id) return false;
+          const f = new Date(a.fecha + 'T00:00:00');
+          return f.getMonth() === mes && f.getFullYear() === anio;
+        });
+        const dias = {};
+        for (let d = 1; d <= diasDelMes; d++) {
+          const fecha = `${anio}-${String(mes+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+          const reg = registros.find(r => r.fecha === fecha);
+          dias[d] = reg ? reg.estado : null;
+        }
+        const presentes = registros.filter(r => r.estado === 'presente' || r.estado === 'justificado').length;
+        const total = registros.length;
+        return { ...est, dias, presentes, total, pct: total > 0 ? Math.round((presentes/total)*100) : null };
+      });
+
+      const display = document.getElementById('asistencia-display');
+      display.innerHTML = `<div class="table-wrapper animate-fadeIn">
+        <div style="padding:12px;font-size:14px;font-weight:600;color:var(--text-muted)">
+          Reporte de Asistencia — ${meses[mes]} ${anio}
+        </div>
+        <table><thead><tr>
+          <th>Estudiante</th>
+          ${Array.from({length:diasDelMes},(_,i)=>`<th style="text-align:center;font-size:10px;padding:4px 2px;min-width:22px">${i+1}</th>`).join('')}
+          <th style="text-align:center">%</th>
+          <th style="text-align:center">Estado</th>
+        </tr></thead>
+        <tbody>${data.map(est => {
+          const color = Utils.colorFromString(est.nombre+est.apellido);
+          return `<tr>
+            <td style="white-space:nowrap">
+              <div style="display:flex;align-items:center;gap:6px">
+                <div class="avatar" style="width:24px;height:24px;font-size:10px;background:${color}">${Utils.avatarInitials(est.nombre,est.apellido)}</div>
+                <strong>${est.apellido}, ${est.nombre}</strong>
+              </div>
+            </td>
+            ${Array.from({length:diasDelMes},(_,i)=>{
+              const d = i+1;
+              const estado = est.dias[d];
+              if (!estado) return `<td style="text-align:center;font-size:10px;color:var(--text-muted)">—</td>`;
+              const colors = { presente:'#2ECC71', ausente:'#E74C3C', tardanza:'#F39C12', justificado:'#3498DB' };
+              return `<td style="text-align:center;font-size:12px;color:${colors[estado]||'#999'}">${estado === 'presente' ? '✓' : estado === 'ausente' ? '✗' : estado === 'tardanza' ? '⏰' : '📄'}</td>`;
+            }).join('')}
+            <td style="text-align:center;font-weight:700;color:${est.pct!==null?Utils.colorAsistencia(est.pct):'var(--text-muted)'}">${est.pct!==null?est.pct+'%':'—'}</td>
+            <td style="text-align:center">${est.pct!==null?(est.pct>=80?'<span class="badge badge-success">'+Icons.check+'</span>':'<span class="badge badge-danger">'+Icons.error+'</span>'):'<span class="badge badge-neutral">—</span>'}</td>
+          </tr>`;
+        }).join('')}
+        </tbody></table>
+        ${!data.length?'<div class="empty-state"><p>Sin datos de asistencia para este período</p></div>':''}
+      </div>`;
+    };
+
+    document.getElementById('btn-generar-asistencia').addEventListener('click', generar);
+    document.getElementById('btn-exportar-asistencia').addEventListener('click', () => {
+      const grupoId = document.getElementById('asist-grupo').value;
+      const mes = parseInt(document.getElementById('asist-mes').value);
+      const anio = parseInt(document.getElementById('asist-anio').value);
+      const estudiantes = grupoId ? DB.getEstudiantesByGrupo(grupoId) : DB.getEstudiantes().filter(e=>e.activo);
+      const data = estudiantes.map(est => {
+        const registros = DB.getAsistencia().filter(a => {
+          if (a.estudianteId !== est.id) return false;
+          const f = new Date(a.fecha + 'T00:00:00');
+          return f.getMonth() === mes && f.getFullYear() === anio;
+        });
+        const presentes = registros.filter(r => r.estado === 'presente' || r.estado === 'justificado').length;
+        const ausentes = registros.filter(r => r.estado === 'ausente').length;
+        const tardanzas = registros.filter(r => r.estado === 'tardanza').length;
+        const justificados = registros.filter(r => r.estado === 'justificado').length;
+        return {
+          'Apellido': est.apellido, 'Nombre': est.nombre,
+          'Presentes': presentes, 'Ausentes': ausentes,
+          'Tardanzas': tardanzas, 'Justificados': justificados,
+          'Total': registros.length,
+          '% Asistencia': registros.length > 0 ? Math.round((presentes/registros.length)*100) : 0
+        };
+      });
+      Utils.exportarCSV(data, `asistencia_${meses[mes]}_${anio}`);
+      Utils.toast('Reporte exportado', 'success');
+    });
+    generar();
+  },
+
+  renderHistorial(content) {
+    const estudiantes = DB.getEstudiantes().filter(e => e.activo);
+    const config = DB.getConfig();
+
+    content.innerHTML = `
+      <div class="animate-fadeIn">
+        <div class="card" style="margin-bottom:20px">
+          <div class="card-body" style="padding:16px">
+            <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap">
+              <div class="form-group" style="margin:0;min-width:260px">
+                <label>Estudiante</label>
+                <select class="form-control" id="hist-estudiante">
+                  <option value="">Seleccionar estudiante...</option>
+                  ${estudiantes.map(e=>`<option value="${e.id}">${e.apellido}, ${e.nombre} — ${DB.getGrupo(e.grupoId)?.nombre||''}</option>`).join('')}
+                </select>
+              </div>
+              <button class="btn btn-primary" id="btn-generar-historial">${Icons.clock} Ver Historial</button>
+            </div>
+          </div>
+        </div>
+        <div id="historial-display"></div>
+      </div>`;
+
+    const generar = (estId) => {
+      if (!estId) { document.getElementById('historial-display').innerHTML = '<div class="empty-state"><div class="empty-icon">'+Icons.clock+'</div><h3>Selecciona un estudiante</h3><p>Elige un estudiante para ver su historial académico completo</p></div>'; return; }
+      const est = DB.getEstudiante(estId);
+      if (!est) return;
+      const grado = DB.getGrado(est.gradoId);
+      const grupo = DB.getGrupo(est.grupoId);
+      const materias = DB.getMateriasByGrado(est.gradoId);
+      const periodos = DB.getPeriodos();
+      const notas = DB.getNotasByEstudiante(estId);
+      const asistencia = DB.getAsistenciaByEstudiante(estId);
+
+      // Timeline items ordered by date
+      const timeline = [];
+      notas.forEach(n => {
+        const materia = DB.getMateria(n.materiaId);
+        const periodo = DB.getPeriodo(n.periodoId);
+        timeline.push({
+          fecha: n.fecha,
+          tipo: 'nota',
+          titulo: `${materia?.nombre||'Materia'} — ${n.tipo}`,
+          descripcion: `Nota: ${n.valor}${n.descripcion?' · '+n.descripcion:''}`,
+          color: Utils.colorNota(n.valor, config.escala.minAprobatorio),
+          icon: Icons.fileText
+        });
+      });
+      asistencia.forEach(a => {
+        const materia = DB.getMateria(a.materiaId);
+        const estadoConf = Utils.estadoAsistenciaConfig(a.estado);
+        timeline.push({
+          fecha: a.fecha,
+          tipo: 'asistencia',
+          titulo: `${materia?.nombre||'Materia'} — ${estadoConf.label}`,
+          descripcion: a.justificacion ? `Justificación: ${a.justificacion}` : '',
+          color: estadoConf.color,
+          icon: Icons.calendar
+        });
+      });
+      timeline.sort((a,b) => a.fecha.localeCompare(b.fecha));
+
+      const pctAsistencia = DB.calcularPorcentajeAsistencia(estId, null);
+
+      const display = document.getElementById('historial-display');
+      display.innerHTML = `
+        <div class="card" style="margin-bottom:20px">
+          <div class="card-body" style="padding:20px;display:flex;align-items:center;gap:20px;flex-wrap:wrap">
+            <div class="avatar avatar-lg" style="width:60px;height:60px;font-size:24px;background:${Utils.colorFromString(est.nombre+est.apellido)}">${Utils.avatarInitials(est.nombre,est.apellido)}</div>
+            <div style="flex:1">
+              <h3 style="font-size:20px">${est.nombre} ${est.apellido}</h3>
+              <div style="font-size:13px;color:var(--text-muted)">${grado?.nombre||'—'} · ${grupo?.nombre||'—'} · Doc: ${est.documento||'—'}</div>
+            </div>
+            <div style="display:flex;gap:20px">
+              <div style="text-align:center;padding:8px 16px;background:var(--bg-01);border-radius:var(--r-md)">
+                <div style="font-size:20px;font-weight:800;color:var(--primary)">${materias.length}</div>
+                <div style="font-size:11px;color:var(--text-muted)">Materias</div>
+              </div>
+              <div style="text-align:center;padding:8px 16px;background:var(--bg-01);border-radius:var(--r-md)">
+                <div style="font-size:20px;font-weight:800;color:${Utils.colorAsistencia(pctAsistencia)}">${pctAsistencia}%</div>
+                <div style="font-size:11px;color:var(--text-muted)">Asistencia</div>
+              </div>
+              <div style="text-align:center;padding:8px 16px;background:var(--bg-01);border-radius:var(--r-md)">
+                <div style="font-size:20px;font-weight:800;color:var(--primary)">${timeline.length}</div>
+                <div style="font-size:11px;color:var(--text-muted)">Registros</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:20px;flex-wrap:wrap">
+          <!-- Timeline -->
+          <div style="flex:2;min-width:300px">
+            <h4 style="margin-bottom:16px;font-size:14px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px">${Icons.clock} Línea de Tiempo Académica</h4>
+            ${timeline.length === 0 ? '<div class="empty-state"><p>Sin registros académicos</p></div>' :
+            `<div class="timeline">${timeline.slice(-30).map(t => `
+              <div class="timeline-item">
+                <div class="timeline-dot" style="background:${t.color}"></div>
+                <div class="timeline-content">
+                  <div class="timeline-date">${Utils.formatFecha(t.fecha)}</div>
+                  <div class="timeline-title" style="color:${t.color}">${t.titulo}</div>
+                  ${t.descripcion ? '<div class="timeline-desc">'+t.descripcion+'</div>' : ''}
+                </div>
+              </div>
+            `).join('')}</div>`}
+          </div>
+
+          <!-- Summary per subject -->
+          <div style="flex:1;min-width:250px">
+            <h4 style="margin-bottom:16px;font-size:14px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px">${Icons.grades} Resumen por Materia</h4>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              ${materias.map(m => {
+                const pf = DB.calcularPromedioFinal(estId, m.id);
+                const aprobado = pf !== null && pf >= config.escala.minAprobatorio;
+                return `<div class="card" style="border-left:4px solid ${m.color}">
+                  <div class="card-body" style="padding:10px 14px;display:flex;justify-content:space-between;align-items:center">
+                    <div>
+                      <strong style="font-size:13px">${m.nombre}</strong>
+                      <div style="font-size:11px;color:var(--text-muted)">${DB.getPeriodos().length} períodos</div>
+                    </div>
+                    <div style="text-align:right">
+                      <span style="font-size:18px;font-weight:800;color:${pf!==null?Utils.colorNota(pf,config.escala.minAprobatorio):'var(--text-muted)'}">${pf!==null?Utils.formatNota(pf):'—'}</span>
+                      <div>${pf!==null?(aprobado?'<span class="badge badge-success" style="font-size:10px">'+Icons.check+'</span>':'<span class="badge badge-danger" style="font-size:10px">'+Icons.error+'</span>'):'<span class="badge badge-neutral" style="font-size:10px">—</span>'}</div>
+                    </div>
+                  </div>
+                </div>`;
+              }).join('')}
+              ${!materias.length ? '<p style="color:var(--text-muted);font-size:13px">Sin materias asignadas</p>' : ''}
+            </div>
+          </div>
+        </div>`;
+    };
+
+    if (this.session.rol === 'estudiante') {
+      const user = DB.getUsuario(this.session.userId);
+      const estId = user?.estudianteId || this.session.userId;
+      setTimeout(() => generar(estId), 100);
+    }
+
+    document.getElementById('btn-generar-historial').addEventListener('click', () => {
+      generar(document.getElementById('hist-estudiante').value);
+    });
   }
 };
 

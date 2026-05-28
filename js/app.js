@@ -33,8 +33,8 @@ const App = {
     ]
   },
 
-  init() {
-    DB.init();
+  async init() {
+    await DB.init();
     const session = Auth.getSession();
     if (!session) return;
 
@@ -177,7 +177,7 @@ const App = {
   renderNotifications(session) {
     const dropdown = document.getElementById('notif-dropdown');
     const notifs = DB.getNotificaciones(session.userId).slice(0, 8);
-    const icons = { alerta: '${Icons.warning}', asistencia: '${Icons.clipboard}', sistema: '${Icons.info}' };
+    const icons = { alerta: Icons.warning, asistencia: Icons.clipboard, sistema: Icons.info };
     let html = `<div class="notif-header">
       <span>Notificaciones</span>
       <a href="#" onclick="DB.marcarTodasLeidas('${session.userId}'); App.updateNotifBadge(Auth.getSession()); return false;" style="font-size:12px;color:var(--primary);">Marcar todas</a>
@@ -186,7 +186,7 @@ const App = {
     if (!notifs.length) html += '<div style="padding:24px;text-align:center;color:var(--text-muted);">Sin notificaciones</div>';
     notifs.forEach(n => {
       html += `<div class="notif-item ${n.leida?'':'unread'}" onclick="DB.marcarLeida('${n.id}'); App.updateNotifBadge(Auth.getSession())">
-        <span class="notif-icon">${icons[n.tipo]||'${Icons.mapPin}'}</span>
+        <span class="notif-icon">${icons[n.tipo]||Icons.mapPin}</span>
         <div class="notif-text">
           <div class="notif-msg">${n.mensaje}</div>
           <div class="notif-time">${Utils.formatFechaCorta(n.fecha)}</div>

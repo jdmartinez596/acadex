@@ -22,13 +22,25 @@ const Auth = {
       .select('id, nombre, apellido, email, rol, estudiante_id, password')
       .eq('email', email.trim().toLowerCase())
       .single();
-    if (error) return { ok: false, error: `Error: ${error.message || JSON.stringify(error)}` };
-    if (!data) return { ok: false, error: 'Usuario no encontrado' };
-    if (data.password !== password) return { ok: false, error: 'Contraseña incorrecta' };
+    if (!error && data) {
+      if (data.password !== password) return { ok: false, error: 'Contraseña incorrecta' };
+      const session = {
+        userId: data.id, rol: data.rol, nombre: data.nombre,
+        apellido: data.apellido, email: data.email,
+        estudianteId: data.estudiante_id,
+        loginAt: Date.now()
+      };
+      sessionStorage.setItem(this.SESSION_KEY, JSON.stringify(session));
+      return { ok: true, user: session };
+    }
+    // Fallback: buscar en caché local si Supabase falla
+    const local = DB.getUsuarios().find(u => u.email === email.trim().toLowerCase() && u.activo !== false);
+    if (!local) return { ok: false, error: 'Usuario no encontrado' };
+    if (local.password !== password) return { ok: false, error: 'Contraseña incorrecta' };
     const session = {
-      userId: data.id, rol: data.rol, nombre: data.nombre,
-      apellido: data.apellido, email: data.email,
-      estudianteId: data.estudiante_id,
+      userId: local.id, rol: local.rol, nombre: local.nombre,
+      apellido: local.apellido, email: local.email,
+      estudianteId: local.estudiante_id || local.estudianteId,
       loginAt: Date.now()
     };
     sessionStorage.setItem(this.SESSION_KEY, JSON.stringify(session));
@@ -41,13 +53,25 @@ const Auth = {
       .select('id, nombre, apellido, email, rol, estudiante_id, password')
       .eq('documento', documento.trim())
       .single();
-    if (error) return { ok: false, error: `Error: ${error.message || JSON.stringify(error)}` };
-    if (!data) return { ok: false, error: 'Estudiante no encontrado' };
-    if (data.password !== password) return { ok: false, error: 'Documento/contraseña incorrectos' };
+    if (!error && data) {
+      if (data.password !== password) return { ok: false, error: 'Documento/contraseña incorrectos' };
+      const session = {
+        userId: data.id, rol: data.rol, nombre: data.nombre,
+        apellido: data.apellido, email: data.email,
+        estudianteId: data.estudiante_id,
+        loginAt: Date.now()
+      };
+      sessionStorage.setItem(this.SESSION_KEY, JSON.stringify(session));
+      return { ok: true, user: session };
+    }
+    // Fallback: buscar en caché local si Supabase falla
+    const local = DB.getUsuarios().find(u => u.documento === documento.trim() && u.activo !== false);
+    if (!local) return { ok: false, error: 'Estudiante no encontrado' };
+    if (local.password !== password) return { ok: false, error: 'Documento/contraseña incorrectos' };
     const session = {
-      userId: data.id, rol: data.rol, nombre: data.nombre,
-      apellido: data.apellido, email: data.email,
-      estudianteId: data.estudiante_id,
+      userId: local.id, rol: local.rol, nombre: local.nombre,
+      apellido: local.apellido, email: local.email,
+      estudianteId: local.estudiante_id || local.estudianteId,
       loginAt: Date.now()
     };
     sessionStorage.setItem(this.SESSION_KEY, JSON.stringify(session));
@@ -94,7 +118,7 @@ async function initLogin() {
   if (loggedIn) {
     page.style.display = 'none';
     app.classList.add('visible');
-    App.init();
+    await App.init();
     return;
   }
 
@@ -162,7 +186,7 @@ async function initLogin() {
     if (result.ok) {
       page.style.display = 'none';
       app.classList.add('visible');
-      App.init();
+      await App.init();
       Utils.toast(`¡Bienvenido/a, ${result.user.nombre}! 🎉`, 'success');
     } else {
       document.getElementById('login-error').textContent = result.error;

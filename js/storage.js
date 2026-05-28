@@ -6,9 +6,9 @@ const Storage = {
   bucket: 'avatars',
 
   async upload(path, file) {
-    const { error } = await supabase.storage.from(this.bucket).upload(path, file, { upsert: true });
+    const { data, error } = await supabase.storage.from(this.bucket).upload(path, file, { upsert: true });
     if (error) throw error;
-    return this.getUrl(path);
+    return this.getUrl(data?.path || path);
   },
 
   async delete(path) {

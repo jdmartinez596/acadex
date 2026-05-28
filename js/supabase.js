@@ -66,7 +66,7 @@ const supabase = (() => {
   function buildUrl(table, opts) {
     const params = new URLSearchParams();
     params.set('select', opts.select || '*');
-    if (opts.filters) opts.filters.forEach(f => params.set(f.col, f.op + '.' + f.val));
+    if (opts.filters) opts.filters.forEach(f => params.append(f.col, f.op + '.' + f.val));
     if (opts.order) params.set('order', opts.order);
     if (opts.limit) params.set('limit', opts.limit);
     return `${BASE}/rest/v1/${table}?${params}`;
@@ -128,7 +128,7 @@ const supabase = (() => {
 
       function buildMutationUrl() {
         const params = new URLSearchParams();
-        opts.filters.forEach(f => params.set(f.col, f.op + '.' + f.val));
+        opts.filters.forEach(f => params.append(f.col, f.op + '.' + f.val));
         const qs = params.toString();
         return `${BASE}/rest/v1/${table}${qs ? '?' + qs : ''}`;
       }
@@ -145,7 +145,7 @@ const supabase = (() => {
               try {
                 const token = await ensureToken();
                 const params = new URLSearchParams();
-                mopts.filters.forEach(f => params.set(f.col, f.op + '.' + f.val));
+                mopts.filters.forEach(f => params.append(f.col, f.op + '.' + f.val));
                 const qs = params.toString();
                 const url = `${BASE}/rest/v1/${table}${qs ? '?' + qs : ''}`;
                 const res = await fetch_(url, { method, headers: headers(token), body: data ? JSON.stringify(data) : null });
@@ -209,12 +209,13 @@ const supabase = (() => {
     storage: {
       from(bucket) {
         return {
-          async upload(path, file) {
+          async upload(path, file, opts = {}) {
             const token = await ensureToken();
             const h = { apikey: ANON };
             if (token?.access_token) h['Authorization'] = 'Bearer ' + token.access_token;
+            const method = opts.upsert ? 'PUT' : 'POST';
             const res = await fetch_(`${BASE}/storage/v1/object/${bucket}/${path}`, {
-              method: 'POST', headers: h, body: file
+              method, headers: h, body: file
             });
             if (!res.ok) { const e = await res.json().catch(() => ({ message: res.statusText })); return { data: null, error: e }; }
             return { data: { path }, error: null };

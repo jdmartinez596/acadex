@@ -266,7 +266,7 @@ const Students = {
               <td><div style="display:flex;align-items:center;gap:8px"><div style="width:8px;height:8px;border-radius:50%;background:${m.color}"></div><strong>${m.nombre}</strong></div></td>
               ${promedios.map(p => `<td style="font-weight:600;color:${p!==null?Utils.colorNota(p,config.escala.minAprobatorio):'var(--text-muted)'}">${p!==null?Utils.formatNota(p):'—'}</td>`).join('')}
               <td style="font-weight:800;font-size:16px;color:${prom!==null?Utils.colorNota(prom,config.escala.minAprobatorio):'var(--text-muted)'}">${prom!==null?Utils.formatNota(prom):'—'}</td>
-              <td>${prom!==null ? (aprobado?'<span class="badge badge-success">${Icons.check} Aprobado</span>':'<span class="badge badge-danger">${Icons.error} Reprobado</span>') : '<span class="badge badge-neutral">Sin notas</span>'}</td>
+              <td>${prom!==null ? (aprobado?'<span class="badge badge-success">'+Icons.check+' Aprobado</span>':'<span class="badge badge-danger">'+Icons.error+' Reprobado</span>') : '<span class="badge badge-neutral">Sin notas</span>'}</td>
             </tr>`;
           }).join('')}</tbody></table>`;
       } else if (tab === 'asistencia') {
@@ -298,16 +298,16 @@ const Students = {
         c.innerHTML = `<div class="grid-2" style="gap:20px">
           <div class="card"><div class="card-body">
             <h4 style="margin-bottom:16px;color:var(--text-muted);font-size:12px;text-transform:uppercase;letter-spacing:.5px">Datos Personales</h4>
-            ${[['${Icons.clipboard}','Documento',`${est.tipoDoc||'TI'}: ${est.documento}`],['${Icons.cake}','Nacimiento',Utils.formatFecha(est.fechaNacimiento)],
-               ['${Icons.phone}','Teléfono',est.telefono],['${Icons.home}','Dirección',est.direccion],['${Icons.mail}','Email',est.email]]
+            ${[[Icons.clipboard,'Documento',`${est.tipoDoc||'TI'}: ${est.documento}`],[Icons.cake,'Nacimiento',Utils.formatFecha(est.fechaNacimiento)],
+               [Icons.phone,'Teléfono',est.telefono],[Icons.home,'Dirección',est.direccion],[Icons.mail,'Email',est.email]]
                .map(([ico,lbl,val]) => `<div style="display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--gray-light);font-size:13px">
                   <span>${ico}</span><span style="color:var(--text-muted);min-width:90px">${lbl}:</span><strong>${val||'—'}</strong>
                </div>`).join('')}
           </div></div>
           <div class="card"><div class="card-body">
             <h4 style="margin-bottom:16px;color:var(--text-muted);font-size:12px;text-transform:uppercase;letter-spacing:.5px">Datos del Acudiente</h4>
-            ${est.acudiente ? [['${Icons.users}','Nombre',est.acudiente.nombre],['👨‍👩‍👧','Parentesco',est.acudiente.parentesco],
-               ['${Icons.phone}','Teléfono',est.acudiente.telefono],['${Icons.mail}','Email',est.acudiente.email]]
+            ${est.acudiente ? [[Icons.users,'Nombre',est.acudiente.nombre],['👨‍👩‍👧','Parentesco',est.acudiente.parentesco],
+               [Icons.phone,'Teléfono',est.acudiente.telefono],[Icons.mail,'Email',est.acudiente.email]]
                .map(([ico,lbl,val]) => `<div style="display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--gray-light);font-size:13px">
                   <span>${ico}</span><span style="color:var(--text-muted);min-width:90px">${lbl}:</span><strong>${val||'—'}</strong>
                </div>`).join('') : '<p style="color:var(--text-muted)">Sin datos de acudiente</p>'}
@@ -431,21 +431,13 @@ const Students = {
       if (!form.checkValidity()) { form.reportValidity(); return; }
       const data = Utils.serializeForm(form);
 
-      // Subir foto a Supabase Storage si hay archivo nuevo
-      if (fotoFile) {
-        try {
-          const tmpId = 'tmp_' + Date.now();
-          fotoData = await Storage.uploadStudentPhoto(tmpId, fotoFile);
-        } catch (err) { console.error('Upload error:', err); }
-      }
-
       const estData = {
         nombre: data.nombre, apellido: data.apellido,
         documento: data.documento, tipoDoc: data.tipoDoc,
         fechaNacimiento: data.fechaNacimiento,
         gradoId: data.gradoId, grupoId: data.grupoId,
         email: data.email, telefono: data.telefono,
-        direccion: data.direccion, foto: fotoData,
+        direccion: data.direccion,
         acudiente: {
           nombre: data.acudiente_nombre,
           parentesco: data.acudiente_parentesco,
@@ -453,20 +445,26 @@ const Students = {
           email: data.acudiente_email
         }
       };
-      if (est) {
-        await DB.updateEstudiante(id, estData);
-        if (fotoFile && fotoData) {
-          const newUrl = await Storage.uploadStudentPhoto(id, fotoFile);
-          await DB.updateEstudiante(id, { foto: newUrl });
+
+      try {
+        if (est) {
+          await DB.updateEstudiante(id, estData);
+          if (fotoFile) {
+            const url = await Storage.uploadStudentPhoto(id, fotoFile);
+            await DB.updateEstudiante(id, { foto: url });
+          }
+          Utils.toast('Estudiante actualizado', 'success');
+        } else {
+          const newEst = await DB.addEstudiante(estData);
+          if (fotoFile) {
+            const url = await Storage.uploadStudentPhoto(newEst.id, fotoFile);
+            await DB.updateEstudiante(newEst.id, { foto: url });
+          }
+          Utils.toast('Estudiante registrado exitosamente', 'success');
         }
-        Utils.toast('Estudiante actualizado', 'success');
-      } else {
-        const newEst = await DB.addEstudiante(estData);
-        if (fotoFile && fotoData) {
-          const newUrl = await Storage.uploadStudentPhoto(newEst.id, fotoFile);
-          await DB.updateEstudiante(newEst.id, { foto: newUrl });
-        }
-        Utils.toast('Estudiante registrado exitosamente', 'success');
+      } catch (err) {
+        Utils.toast('Error al guardar: ' + err.message, 'error');
+        console.error(err);
       }
       modal.remove();
       document.body.style.overflow='';
@@ -513,11 +511,11 @@ const Students = {
           <div class="alert alert-info"><span class="alert-icon">${Icons.info}</span>
             <div class="alert-text"><strong>Formato requerido</strong>Las columnas deben ser: Apellido, Nombre, Documento, Grado, Grupo, Email, Teléfono, Acudiente</div>
           </div>
-          <div class="file-drop-zone" id="import-zone">
+              <div class="file-drop-zone" id="import-zone">
             <div class="drop-icon">${Icons.file}</div>
-            <p>Arrastra tu archivo CSV aquí o <span onclick="document.getElementById('import-file').click()">haz clic para seleccionar</span></p>
-            <p style="font-size:12px;margin-top:4px;color:var(--text-muted)">Formatos: .csv</p>
-            <input type="file" id="import-file" accept=".csv" style="display:none">
+            <p>Arrastra tu archivo CSV o Excel aquí o <span onclick="document.getElementById('import-file').click()">haz clic para seleccionar</span></p>
+            <p style="font-size:12px;margin-top:4px;color:var(--text-muted)">Formatos: .csv, .xlsx, .xls</p>
+            <input type="file" id="import-file" accept=".csv,.xlsx,.xls" style="display:none">
           </div>
           <div id="import-preview" style="margin-top:16px"></div>
           <button class="btn btn-outline btn-sm" style="margin-top:12px" onclick="Students.descargarPlantilla()">${Icons.download} Descargar plantilla CSV</button>
@@ -532,25 +530,53 @@ const Students = {
 
     let importData = [];
     const processFile = (file) => {
-      const reader = new FileReader();
-      reader.onload = e => {
-        const text = e.target.result;
-        const lines = text.split('\n').filter(l => l.trim());
-        const headers = lines[0].split(',').map(h => h.trim().replace(/"/g,''));
-        importData = lines.slice(1).map(line => {
-          const vals = line.split(',').map(v => v.trim().replace(/"/g,''));
-          const obj = {};
-          headers.forEach((h,i) => obj[h] = vals[i]||'');
-          return obj;
-        }).filter(r => r['Nombre']);
-        document.getElementById('import-preview').innerHTML = `
-          <div class="alert alert-success"><span>${Icons.check}</span><div><strong>${importData.length} registros detectados</strong></div></div>
-          <div style="max-height:200px;overflow-y:auto;font-size:12px">${importData.slice(0,5).map(r=>
-            `<div style="padding:4px 0;border-bottom:1px solid var(--gray-light)">${r['Apellido']||''}, ${r['Nombre']||''} — ${r['Grado']||''} ${r['Grupo']||''}</div>`
-          ).join('')}${importData.length>5?`<div style="padding:4px 0;color:var(--text-muted)">...y ${importData.length-5} más</div>`:''}</div>`;
-        document.getElementById('btn-do-import').disabled = false;
-      };
-      reader.readAsText(file);
+      const ext = file.name.split('.').pop().toLowerCase();
+      if (ext === 'csv') {
+        const reader = new FileReader();
+        reader.onload = e => {
+          const text = e.target.result;
+          const lines = text.split('\n').filter(l => l.trim());
+          const headers = lines[0].split(',').map(h => h.trim().replace(/"/g,''));
+          importData = lines.slice(1).map(line => {
+            const vals = line.split(',').map(v => v.trim().replace(/"/g,''));
+            const obj = {};
+            headers.forEach((h,i) => obj[h] = vals[i]||'');
+            return obj;
+          }).filter(r => r['Nombre']);
+          showPreview();
+        };
+        reader.readAsText(file);
+      } else if (ext === 'xlsx' || ext === 'xls') {
+        const reader = new FileReader();
+        reader.onload = e => {
+          const wb = XLSX.read(e.target.result, { type: 'array' });
+          const ws = wb.Sheets[wb.SheetNames[0]];
+          const json = XLSX.utils.sheet_to_json(ws, { defval: '' });
+          importData = json.map(r => ({
+            'Apellido': r['Apellido'] || r['apellido'] || '',
+            'Nombre': r['Nombre'] || r['nombre'] || '',
+            'Documento': r['Documento'] || r['documento'] || String(r['DOCUMENTO'] || ''),
+            'Grado': r['Grado'] || r['grado'] || '',
+            'Grupo': r['Grupo'] || r['grupo'] || '',
+            'Email': r['Email'] || r['email'] || '',
+            'Teléfono': r['Teléfono'] || r['telefono'] || r['Telefono'] || '',
+            'Acudiente': r['Acudiente'] || r['acudiente'] || ''
+          })).filter(r => r['Nombre']);
+          showPreview();
+        };
+        reader.readAsArrayBuffer(file);
+      } else {
+        Utils.toast('Formato no soportado. Usa .csv, .xlsx o .xls', 'error');
+      }
+    };
+
+    const showPreview = () => {
+      document.getElementById('import-preview').innerHTML = `
+        <div class="alert alert-success"><span>${Icons.check}</span><div><strong>${importData.length} registros detectados</strong></div></div>
+        <div style="max-height:200px;overflow-y:auto;font-size:12px">${importData.slice(0,5).map(r=>
+          `<div style="padding:4px 0;border-bottom:1px solid var(--gray-light)">${r['Apellido']||''}, ${r['Nombre']||''} — ${r['Grado']||''} ${r['Grupo']||''}</div>`
+        ).join('')}${importData.length>5?`<div style="padding:4px 0;color:var(--text-muted)">...y ${importData.length-5} más</div>`:''}</div>`;
+      document.getElementById('btn-do-import').disabled = false;
     };
 
     document.getElementById('import-file').addEventListener('change', e => { if(e.target.files[0]) processFile(e.target.files[0]); });
@@ -558,26 +584,29 @@ const Students = {
     document.getElementById('import-zone').addEventListener('dragleave', e => { e.currentTarget.classList.remove('drag-over'); });
     document.getElementById('import-zone').addEventListener('drop', e => { e.preventDefault(); e.currentTarget.classList.remove('drag-over'); if(e.dataTransfer.files[0]) processFile(e.dataTransfer.files[0]); });
 
-    document.getElementById('btn-do-import').addEventListener('click', () => {
+    document.getElementById('btn-do-import').addEventListener('click', async () => {
       const grados = DB.getGrados();
       const grupos = DB.getGrupos();
-      let added = 0;
-      importData.forEach(r => {
-        const grado = grados.find(g => g.nombre.replace('°','') === r['Grado'].replace('°',''));
+      let added = 0, errors = 0;
+      for (const r of importData) {
+        if (!r['Nombre'] || !r['Apellido']) { errors++; continue; }
+        const grado = grados.find(g => g.nombre.replace('°','') === (r['Grado']||'').replace('°',''));
         const grupo = grupos.find(g => g.nombre === r['Grupo']);
-        DB.addEstudiante({
-          nombre: r['Nombre'], apellido: r['Apellido'],
-          documento: r['Documento']||'', tipoDoc: 'TI',
-          gradoId: grado?.id||'', grupoId: grupo?.id||'',
-          email: r['Email']||'', telefono: r['Teléfono']||'',
-          acudiente: { nombre: r['Acudiente']||'', parentesco: 'Tutor/a', telefono: '', email: '' },
-          foto: null, direccion: '', fechaNacimiento: ''
-        });
-        added++;
-      });
+        try {
+          await DB.addEstudiante({
+            nombre: r['Nombre'], apellido: r['Apellido'],
+            documento: r['Documento']||'', tipoDoc: 'TI',
+            gradoId: grado?.id||null, grupoId: grupo?.id||null,
+            email: r['Email']||'', telefono: r['Teléfono']||'',
+            acudiente: { nombre: r['Acudiente']||'', parentesco: 'Tutor/a', telefono: '', email: '' },
+            foto: null, direccion: '', fechaNacimiento: ''
+          });
+          added++;
+        } catch (e) { errors++; console.error('Import error:', r, e); }
+      }
       modal.remove();
       document.body.style.overflow='';
-      Utils.toast(`${added} estudiantes importados exitosamente`, 'success');
+      Utils.toast(`${added} estudiantes importados${errors ? ', '+errors+' errores' : ''}`, errors ? 'warning' : 'success');
       this.renderList(session);
     });
   },
