@@ -113,6 +113,40 @@ const supabase = (() => {
 
     from(table) {
       const opts = { select: '*', filters: [], order: null, limit: null, single: false };
+
+      function buildMutationUrl() {
+        const params = new URLSearchParams();
+        opts.filters.forEach(f => params.set(f.col, f.op + '.' + f.val));
+        const qs = params.toString();
+        return `${BASE}/rest/v1/${table}${qs ? '?' + qs : ''}`;
+      }
+
+      function makeMutationChain(method, data) {
+        const mopts = { filters: [] };
+        const mchain = {
+          eq(col, val) { mopts.filters.push({ col, op: 'eq', val: String(val) }); return mchain; },
+          neq(col, val) { mopts.filters.push({ col, op: 'neq', val: String(val) }); return mchain; },
+          is(col, val) { mopts.filters.push({ col, op: 'is', val: String(val) }); return mchain; },
+          in(col, vals) { mopts.filters.push({ col, op: 'in', val: '(' + vals.map(String).join(',') + ')' }); return mchain; },
+          then(onFulfilled, onRejected) {
+            const promise = (async () => {
+              const token = await ensureToken();
+              const params = new URLSearchParams();
+              mopts.filters.forEach(f => params.set(f.col, f.op + '.' + f.val));
+              const qs = params.toString();
+              const url = `${BASE}/rest/v1/${table}${qs ? '?' + qs : ''}`;
+              const res = await fetch(url, { method, headers: headers(token), body: data ? JSON.stringify(data) : null });
+              if (!res.ok) { const e = await res.json().catch(() => ({ message: res.statusText })); return { data: null, error: e }; }
+              if (method === 'DELETE' || res.status === 204) return { data: null, error: null };
+              return { data: await res.json(), error: null };
+            })();
+            return promise.then(onFulfilled, onRejected);
+          },
+          catch(fn) { return Promise.resolve(this).catch(fn); }
+        };
+        return mchain;
+      }
+
       const chain = {
         select(cols) { opts.select = cols || '*'; return chain; },
         eq(col, val) { opts.filters.push({ col, op: 'eq', val: String(val) }); return chain; },
@@ -121,6 +155,16 @@ const supabase = (() => {
         in(col, vals) { opts.filters.push({ col, op: 'in', val: '(' + vals.map(String).join(',') + ')' }); return chain; },
         order(col, dir) { opts.order = col + '.' + (dir || 'asc'); return chain; },
         single() { opts.single = true; return chain; },
+        insert(data) {
+          const chain = makeMutationChain('POST', data);
+          return chain;
+        },
+        update(data) {
+          return makeMutationChain('PATCH', data);
+        },
+        delete() {
+          return makeMutationChain('DELETE', null);
+        },
         then(onFulfilled, onRejected) {
           const promise = (async () => {
             const token = await ensureToken();
