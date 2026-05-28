@@ -43,6 +43,39 @@ const DB = {
     results.forEach((r, i) => { if (r.status === 'rejected') console.warn('DB load error:', r.reason); });
     // Fallback a localStorage si alguna tabla quedó vacía
     this._loadFromLocalStorage();
+    // Seed datos demo si no hay usuarios (primera carga)
+    this._seedDefaults();
+  },
+
+  _seedDefaults() {
+    if (this._data.usuarios.length > 0) return;
+    const defs = [
+      { id: 'admin', nombre: 'Admin', apellido: 'Sistema', email: 'admin@acadex.com', documento: 'ADMIN', password: 'admin123', rol: 'admin', activo: true, institucionId: null },
+      { id: 'docente', nombre: 'Docente', apellido: 'Demo', email: 'docente@acadex.com', documento: 'DOCENTE', password: 'docente123', rol: 'docente', activo: true, institucionId: null }
+    ];
+    defs.forEach(u => {
+      if (!this._data.usuarios.find(x => x.email === u.email)) {
+        this._data.usuarios.push(u);
+      }
+    });
+    if (!this._data.config) {
+      this._data.config = {
+        id: 1, institucion: { nombre: 'Mi Institución', direccion: '', telefono: '', email: '', logo: '', lema: '' },
+        escala: { minAprobatorio: 3, maxValor: 5, decimales: 1 },
+        tiposActividad: [
+          { id: 'examen', nombre: 'Examen', porcentaje: 30, color: '#e74c3c' },
+          { id: 'quiz', nombre: 'Quiz', porcentaje: 20, color: '#f39c12' },
+          { id: 'tarea', nombre: 'Tarea', porcentaje: 20, color: '#3498db' },
+          { id: 'proyecto', nombre: 'Proyecto', porcentaje: 30, color: '#2ecc71' }
+        ],
+        boletinTemplate: { mostrarLogo: true, mostrarEscala: true, mensajePersonalizado: '' },
+        darkMode: false, creado: new Date().toISOString().split('T')[0]
+      };
+    }
+    if (this._data.instituciones.length === 0) {
+      this._data.instituciones.push({ id: 'inst_default', nombre: 'Institución Principal', direccion: '', telefono: '', email: '', activo: true });
+    }
+    this._persistLocal();
   },
 
   _loadFromLocalStorage() {

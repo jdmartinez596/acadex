@@ -183,10 +183,29 @@ const Institutions = {
         }
       });
     }
+    // Auto-sync silencioso al cargar la página (una vez por sesión)
+    if (!sessionStorage.getItem('acadex_auto_synced')) {
+      setTimeout(() => {
+        const r = document.getElementById('sync-result-sa');
+        if (r) {
+          r.innerHTML = '<span style="color:var(--text-muted)">Sincronizando automáticamente...</span>';
+          DB.syncAll().then(() => {
+            r.innerHTML = `<span style="color:var(--success)">${Icons.check} Datos sincronizados</span>`;
+            sessionStorage.setItem('acadex_auto_synced', '1');
+          }).catch(() => {
+            r.innerHTML = '';
+          });
+        } else {
+          DB.syncAll().catch(() => {});
+          sessionStorage.setItem('acadex_auto_synced', '1');
+        }
+      }, 500);
+    }
   },
 
   getSetupSQL() {
-    return `-- ACADEX — Crear tabla instituciones y columna institucion_id
+    return `-- ACADEX — Migraci\\u00f3n Multi-Instituci\\u00f3n
+
 CREATE TABLE IF NOT EXISTS instituciones (
   id TEXT PRIMARY KEY,
   nombre TEXT NOT NULL,
@@ -199,17 +218,21 @@ CREATE TABLE IF NOT EXISTS instituciones (
 
 INSERT INTO instituciones (id, nombre) VALUES ('inst_default', 'Instituci\\u00f3n Principal') ON CONFLICT (id) DO NOTHING;
 
-ALTER TABLE config ADD COLUMN IF NOT EXISTS institucion_id TEXT DEFAULT 'inst_default';
-ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS institucion_id TEXT DEFAULT 'inst_default';
-ALTER TABLE periodos ADD COLUMN IF NOT EXISTS institucion_id TEXT DEFAULT 'inst_default';
-ALTER TABLE grados ADD COLUMN IF NOT EXISTS institucion_id TEXT DEFAULT 'inst_default';
-ALTER TABLE grupos ADD COLUMN IF NOT EXISTS institucion_id TEXT DEFAULT 'inst_default';
-ALTER TABLE materias ADD COLUMN IF NOT EXISTS institucion_id TEXT DEFAULT 'inst_default';
-ALTER TABLE estudiantes ADD COLUMN IF NOT EXISTS institucion_id TEXT DEFAULT 'inst_default';
-ALTER TABLE notas ADD COLUMN IF NOT EXISTS institucion_id TEXT DEFAULT 'inst_default';
-ALTER TABLE asistencia ADD COLUMN IF NOT EXISTS institucion_id TEXT DEFAULT 'inst_default';
-ALTER TABLE actividades ADD COLUMN IF NOT EXISTS institucion_id TEXT DEFAULT 'inst_default';
-ALTER TABLE notificaciones ADD COLUMN IF NOT EXISTS institucion_id TEXT DEFAULT 'inst_default';
+-- Permitir rol super_admin en usuarios
+ALTER TABLE usuarios DROP CONSTRAINT IF EXISTS usuarios_rol_check;
+ALTER TABLE usuarios ADD CONSTRAINT usuarios_rol_check CHECK (rol IN ('super_admin','admin','docente','estudiante'));
+
+ALTER TABLE config ADD COLUMN IF NOT EXISTS institucion_id TEXT DEFAULT 'inst_default' REFERENCES instituciones(id);
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS institucion_id TEXT DEFAULT 'inst_default' REFERENCES instituciones(id);
+ALTER TABLE periodos ADD COLUMN IF NOT EXISTS institucion_id TEXT DEFAULT 'inst_default' REFERENCES instituciones(id);
+ALTER TABLE grados ADD COLUMN IF NOT EXISTS institucion_id TEXT DEFAULT 'inst_default' REFERENCES instituciones(id);
+ALTER TABLE grupos ADD COLUMN IF NOT EXISTS institucion_id TEXT DEFAULT 'inst_default' REFERENCES instituciones(id);
+ALTER TABLE materias ADD COLUMN IF NOT EXISTS institucion_id TEXT DEFAULT 'inst_default' REFERENCES instituciones(id);
+ALTER TABLE estudiantes ADD COLUMN IF NOT EXISTS institucion_id TEXT DEFAULT 'inst_default' REFERENCES instituciones(id);
+ALTER TABLE notas ADD COLUMN IF NOT EXISTS institucion_id TEXT DEFAULT 'inst_default' REFERENCES instituciones(id);
+ALTER TABLE asistencia ADD COLUMN IF NOT EXISTS institucion_id TEXT DEFAULT 'inst_default' REFERENCES instituciones(id);
+ALTER TABLE actividades ADD COLUMN IF NOT EXISTS institucion_id TEXT DEFAULT 'inst_default' REFERENCES instituciones(id);
+ALTER TABLE notificaciones ADD COLUMN IF NOT EXISTS institucion_id TEXT DEFAULT 'inst_default' REFERENCES instituciones(id);
 
 UPDATE usuarios SET rol = 'super_admin' WHERE email = 'jdmartinez596@gmail.com';
 

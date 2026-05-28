@@ -19,7 +19,11 @@ INSERT INTO instituciones (id, nombre, direccion, telefono, email)
 VALUES ('inst_default', 'Institución Principal', '', '', '')
 ON CONFLICT (id) DO NOTHING;
 
--- 3. Agregar columna institucion_id a todas las tablas
+-- 3. Permitir rol super_admin en la tabla usuarios
+ALTER TABLE usuarios DROP CONSTRAINT IF EXISTS usuarios_rol_check;
+ALTER TABLE usuarios ADD CONSTRAINT usuarios_rol_check CHECK (rol IN ('super_admin','admin','docente','estudiante'));
+
+-- 4. Agregar columna institucion_id a todas las tablas
 ALTER TABLE config ADD COLUMN IF NOT EXISTS institucion_id TEXT DEFAULT 'inst_default' REFERENCES instituciones(id);
 ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS institucion_id TEXT DEFAULT 'inst_default' REFERENCES instituciones(id);
 ALTER TABLE periodos ADD COLUMN IF NOT EXISTS institucion_id TEXT DEFAULT 'inst_default' REFERENCES instituciones(id);

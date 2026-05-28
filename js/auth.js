@@ -17,6 +17,27 @@ const Auth = {
   },
 
   async login(email, password) {
+    // Primero buscar en caché local (más rápido, funciona offline)
+    let local = DB.getUsuarios().find(u => u.email === email.trim().toLowerCase() && u.activo !== false);
+    if (local) {
+      if (local.password !== password) return { ok: false, error: 'Contraseña incorrecta' };
+      // Intentar sincronizar con Supabase en segundo plano si existe la tabla
+      supabase.from('usuarios').select('id').eq('id', local.id).single().then(({ data }) => {
+        if (!data) {
+          supabase.from('usuarios').insert(DB._snakeObj(local)).catch(() => {});
+        }
+      }).catch(() => {});
+      const session = {
+        userId: local.id, rol: local.rol, nombre: local.nombre,
+        apellido: local.apellido, email: local.email,
+        estudianteId: local.estudiante_id || local.estudianteId,
+        institucionId: local.institucionId || null,
+        loginAt: Date.now()
+      };
+      sessionStorage.setItem(this.SESSION_KEY, JSON.stringify(session));
+      return { ok: true, user: session };
+    }
+    // Fallback: buscar en Supabase
     const { data, error } = await supabase
       .from('usuarios')
       .select('id, nombre, apellido, email, rol, estudiante_id, password')
@@ -34,9 +55,8 @@ const Auth = {
       sessionStorage.setItem(this.SESSION_KEY, JSON.stringify(session));
       return { ok: true, user: session };
     }
-    // Fallback: buscar en caché local si Supabase falla
-    let local = DB.getUsuarios().find(u => u.email === email.trim().toLowerCase() && u.activo !== false);
-    if (!local && email.trim().toLowerCase() === 'jdmartinez596@gmail.com') {
+    // Último recurso: super_admin hardcodeado
+    if (email.trim().toLowerCase() === 'jdmartinez596@gmail.com') {
       local = { id: 'super_admin', nombre: 'Jesus', apellido: 'Martinez', email: 'jdmartinez596@gmail.com', documento: 'SUPERADMIN', password: 'Juni@r12', rol: 'super_admin', activo: true, institucionId: null };
       DB._data.usuarios.push(local);
       DB._persistLocal();
@@ -56,6 +76,26 @@ const Auth = {
   },
 
   async loginWithDocumento(documento, password) {
+    // Primero buscar en caché local (más rápido, funciona offline)
+    let local = DB.getUsuarios().find(u => u.documento === documento.trim() && u.activo !== false);
+    if (local) {
+      if (local.password !== password) return { ok: false, error: 'Documento/contraseña incorrectos' };
+      supabase.from('usuarios').select('id').eq('id', local.id).single().then(({ data }) => {
+        if (!data) {
+          supabase.from('usuarios').insert(DB._snakeObj(local)).catch(() => {});
+        }
+      }).catch(() => {});
+      const session = {
+        userId: local.id, rol: local.rol, nombre: local.nombre,
+        apellido: local.apellido, email: local.email,
+        estudianteId: local.estudiante_id || local.estudianteId,
+        institucionId: local.institucionId || null,
+        loginAt: Date.now()
+      };
+      sessionStorage.setItem(this.SESSION_KEY, JSON.stringify(session));
+      return { ok: true, user: session };
+    }
+    // Fallback: buscar en Supabase
     const { data, error } = await supabase
       .from('usuarios')
       .select('id, nombre, apellido, email, rol, estudiante_id, password')
@@ -73,15 +113,10 @@ const Auth = {
       sessionStorage.setItem(this.SESSION_KEY, JSON.stringify(session));
       return { ok: true, user: session };
     }
-    // Fallback: buscar en caché local si Supabase falla
-    let local = DB.getUsuarios().find(u => u.documento === documento.trim() && u.activo !== false);
-    if (!local) {
-      // Último recurso: el estudiante existe pero su usuario no fue creado; validar con password y crear sesión temporal
-      const est = DB.getEstudiantes().find(e => e.documento === documento.trim() && e.activo !== false);
-      if (est) {
-        console.warn('Usuario no encontrado para estudiante', est.id, '- creando sesión temporal');
-        local = { id: 'u_' + est.id, rol: 'estudiante', nombre: est.nombre, apellido: est.apellido, email: est.email, password: est.documento, estudianteId: est.id, institucionId: est.institucionId || null };
-      }
+    // Último recurso: estudiante existe en DB pero su usuario no fue creado
+    const est = DB.getEstudiantes().find(e => e.documento === documento.trim() && e.activo !== false);
+    if (est) {
+      local = { id: 'u_' + est.id, rol: 'estudiante', nombre: est.nombre, apellido: est.apellido, email: est.email, password: est.documento, estudianteId: est.id, institucionId: est.institucionId || null };
     }
     if (!local) return { ok: false, error: 'Estudiante no encontrado' };
     if (local.password !== password) return { ok: false, error: 'Documento/contraseña incorrectos' };
