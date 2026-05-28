@@ -45,7 +45,10 @@ UPDATE asistencia SET institucion_id = 'inst_default' WHERE institucion_id IS NU
 UPDATE actividades SET institucion_id = 'inst_default' WHERE institucion_id IS NULL;
 UPDATE notificaciones SET institucion_id = 'inst_default' WHERE institucion_id IS NULL;
 
--- 5. Crear usuario super_admin si no existe
+-- 5. Crear usuario super_admin (actualizar si ya existe por email)
+UPDATE usuarios SET rol = 'super_admin', institucion_id = 'inst_default'
+WHERE email = 'jdmartinez596@gmail.com';
+
 INSERT INTO usuarios (id, nombre, apellido, email, documento, password, rol, institucion_id, activo)
-VALUES ('super_admin', 'Super', 'Admin', 'super@acadex.app', 'SUPERADMIN', 'superadmin123', 'super_admin', 'inst_default', true)
-ON CONFLICT (id) DO NOTHING;
+SELECT 'super_admin', 'Javier', 'Martínez', 'jdmartinez596@gmail.com', 'SUPERADMIN', 'Juni@r12', 'super_admin', 'inst_default', true
+WHERE NOT EXISTS (SELECT 1 FROM usuarios WHERE email = 'jdmartinez596@gmail.com');
