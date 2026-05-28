@@ -19,7 +19,7 @@ const Auth = {
   async login(email, password) {
     const { data, error } = await supabase
       .from('usuarios')
-      .select('id, nombre, apellido, email, rol, estudiante_id, password')
+      .select('id, nombre, apellido, email, rol, estudiante_id, institucion_id, password')
       .eq('email', email.trim().toLowerCase())
       .single();
     if (!error && data) {
@@ -28,6 +28,7 @@ const Auth = {
         userId: data.id, rol: data.rol, nombre: data.nombre,
         apellido: data.apellido, email: data.email,
         estudianteId: data.estudiante_id,
+        institucionId: data.institucion_id || null,
         loginAt: Date.now()
       };
       sessionStorage.setItem(this.SESSION_KEY, JSON.stringify(session));
@@ -41,6 +42,7 @@ const Auth = {
       userId: local.id, rol: local.rol, nombre: local.nombre,
       apellido: local.apellido, email: local.email,
       estudianteId: local.estudiante_id || local.estudianteId,
+      institucionId: local.institucionId || null,
       loginAt: Date.now()
     };
     sessionStorage.setItem(this.SESSION_KEY, JSON.stringify(session));
@@ -50,7 +52,7 @@ const Auth = {
   async loginWithDocumento(documento, password) {
     const { data, error } = await supabase
       .from('usuarios')
-      .select('id, nombre, apellido, email, rol, estudiante_id, password')
+      .select('id, nombre, apellido, email, rol, estudiante_id, institucion_id, password')
       .eq('documento', documento.trim())
       .single();
     if (!error && data) {
@@ -59,6 +61,7 @@ const Auth = {
         userId: data.id, rol: data.rol, nombre: data.nombre,
         apellido: data.apellido, email: data.email,
         estudianteId: data.estudiante_id,
+        institucionId: data.institucion_id || null,
         loginAt: Date.now()
       };
       sessionStorage.setItem(this.SESSION_KEY, JSON.stringify(session));
@@ -71,7 +74,7 @@ const Auth = {
       const est = DB.getEstudiantes().find(e => e.documento === documento.trim() && e.activo !== false);
       if (est) {
         console.warn('Usuario no encontrado para estudiante', est.id, '- creando sesión temporal');
-        local = { id: 'u_' + est.id, rol: 'estudiante', nombre: est.nombre, apellido: est.apellido, email: est.email, password: est.documento, estudianteId: est.id };
+        local = { id: 'u_' + est.id, rol: 'estudiante', nombre: est.nombre, apellido: est.apellido, email: est.email, password: est.documento, estudianteId: est.id, institucionId: est.institucionId || null };
       }
     }
     if (!local) return { ok: false, error: 'Estudiante no encontrado' };
@@ -80,6 +83,7 @@ const Auth = {
       userId: local.id, rol: local.rol, nombre: local.nombre,
       apellido: local.apellido, email: local.email,
       estudianteId: local.estudiante_id || local.estudianteId,
+      institucionId: local.institucionId || null,
       loginAt: Date.now()
     };
     sessionStorage.setItem(this.SESSION_KEY, JSON.stringify(session));
@@ -101,6 +105,7 @@ const Auth = {
     const s = this.getSession();
     if (!s) return false;
     const perms = {
+      super_admin: ['all'],
       admin:      ['all'],
       docente:    ['read_students','write_notas','write_asistencia','read_reports','read_academic'],
       estudiante: ['read_own']

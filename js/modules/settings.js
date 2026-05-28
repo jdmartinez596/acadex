@@ -748,6 +748,21 @@ const Settings = {
           </div>
         </div>
 
+        ${session.rol === 'super_admin' ? `
+        <div class="card animate-fadeIn col-full" style="grid-column: span 2; border: 1px solid rgba(46, 204, 113, 0.2);">
+          <div class="card-header" style="background: rgba(46, 204, 113, 0.05);">
+            <h3 style="color:var(--success)">${Icons.school} Administración Global</h3>
+          </div>
+          <div class="card-body" style="display: flex; align-items: center; gap: 16px;">
+            <div style="flex:1">
+              <h4 style="margin-bottom: 4px;">Gestionar Instituciones</h4>
+              <p style="font-size: 12px; color: var(--text-muted); margin: 0;">Crear, editar o desactivar instituciones educativas. Solo visible para Super Admin.</p>
+            </div>
+            <button class="btn btn-primary" onclick="App.navigate('institutions')">${Icons.school} Ir a Instituciones</button>
+          </div>
+        </div>
+        ` : ''}
+
         <!-- Mantenimiento de Datos -->
         <div class="card animate-fadeIn col-full" style="grid-column: span 2; border: 1px solid rgba(231, 76, 60, 0.2);">
           <div class="card-header" style="background: rgba(231, 76, 60, 0.05);">

@@ -5,6 +5,7 @@
 const DB = {
   _data: {
     config: null,
+    instituciones: [],
     usuarios: [],
     periodos: [],
     grados: [],
@@ -26,7 +27,8 @@ const DB = {
   async _loadAll() {
     const loaders = [
       this._loadTable('config', r => this._mapConfig(r)),
-      this._loadTable('usuarios', r => this._mapRow(r), 'id,nombre,apellido,email,documento,rol,avatar,activo,estudiante_id,creado'),
+      this._loadTable('instituciones', r => this._mapRow(r)),
+      this._loadTable('usuarios', r => this._mapRow(r), 'id,nombre,apellido,email,documento,rol,avatar,activo,estudiante_id,institucion_id,creado'),
       this._loadTable('periodos', r => this._mapRow(r)),
       this._loadTable('grados', r => this._mapRow(r)),
       this._loadTable('grupos', r => this._mapGrupo(r)),
@@ -66,6 +68,18 @@ const DB = {
 
   _persistLocal() {
     try { localStorage.setItem('acadex_data', JSON.stringify(this._data)); } catch (e) { /* quota exceeded, ignore */ }
+  },
+
+  _getInstId() {
+    const s = Auth.getSession();
+    if (!s || s.rol === 'super_admin') return s?.instVista || null;
+    return s.institucionId || null;
+  },
+
+  _filterByInst(data) {
+    const instId = this._getInstId();
+    if (!instId) return data;
+    return data.filter(d => d.institucionId === instId || !d.institucionId);
   },
 
   async _loadTable(name, mapper, columns = '*') {
@@ -119,7 +133,7 @@ const DB = {
   },
 
   async reset() {
-    const tables = ['config','usuarios','periodos','grados','grupos','materias','estudiantes','notas','asistencia','actividades','notificaciones'];
+    const tables = ['config','instituciones','usuarios','periodos','grados','grupos','materias','estudiantes','notas','asistencia','actividades','notificaciones'];
     for (const t of tables) {
       try { await supabase.from(t).delete().neq('id', t === 'config' ? '0' : ''); } catch (e) { console.warn('DB reset error:', t, e); }
     }
@@ -157,13 +171,42 @@ const DB = {
     this._persistLocal();
   },
 
+  // ---- Instituciones ----
+  getInstituciones() { return this._data.instituciones; },
+  getInstitucion(id) { return this._data.instituciones.find(i => i.id === id); },
+  async addInstitucion(data) {
+    const id = 'inst_' + data.nombre.toLowerCase().replace(/[^a-z0-9]/g, '_');
+    if (this._data.instituciones.find(i => i.id === id)) throw new Error('Ya existe una institución con ese nombre');
+    const inst = { id, nombre: data.nombre, direccion: data.direccion || '', telefono: data.telefono || '', email: data.email || '', activo: true };
+    const { error } = await supabase.from('instituciones').insert(inst);
+    if (error) throw new Error('Error al crear institución: ' + (error.message || JSON.stringify(error)));
+    this._data.instituciones.push(inst);
+    this._persistLocal();
+    return inst;
+  },
+  async updateInstitucion(id, data) {
+    const { error } = await supabase.from('instituciones').update(data).eq('id', id);
+    if (error) throw new Error('Error al actualizar: ' + (error.message || JSON.stringify(error)));
+    const idx = this._data.instituciones.findIndex(i => i.id === id);
+    if (idx > -1) this._data.instituciones[idx] = { ...this._data.instituciones[idx], ...data };
+    this._persistLocal();
+  },
+  async deleteInstitucion(id) {
+    await supabase.from('instituciones').update({ activo: false }).eq('id', id);
+    const idx = this._data.instituciones.findIndex(i => i.id === id);
+    if (idx > -1) this._data.instituciones[idx].activo = false;
+    this._persistLocal();
+  },
+
   // ---- Usuarios ----
-  getUsuarios() { return this._data.usuarios; },
+  getUsuarios() { return this._filterByInst(this._data.usuarios); },
   getUsuario(id) { return this._data.usuarios.find(u => u.id === id); },
-  getUsuarioByEmail(email) { return this._data.usuarios.find(u => u.email === email); },
+  getUsuarioByEmail(email) { return this._filterByInst(this._data.usuarios).find(u => u.email === email); },
   async addUsuario(u) {
     u.id = 'u' + Date.now();
     u.creado = new Date().toISOString().split('T')[0];
+    const s = Auth.getSession();
+    if (s && s.institucionId && !u.institucionId) u.institucionId = s.institucionId;
     const { error } = await supabase.from('usuarios').insert(this._snakeObj(u));
     if (error) throw new Error('Error al crear usuario: ' + (error.message || JSON.stringify(error)));
     this._data.usuarios.push(u);
@@ -183,9 +226,9 @@ const DB = {
   },
 
   // ---- Períodos ----
-  getPeriodos() { return this._data.periodos; },
+  getPeriodos() { return this._filterByInst(this._data.periodos); },
   getPeriodo(id) { return this._data.periodos.find(p => p.id === id); },
-  getPeriodoActivo() { return this._data.periodos.find(p => p.activo); },
+  getPeriodoActivo() { return this._filterByInst(this._data.periodos).find(p => p.activo); },
   async addPeriodo(p) {
     p.id = 'p' + Date.now();
     const { error } = await supabase.from('periodos').insert(this._snakeObj(p));
@@ -207,7 +250,7 @@ const DB = {
   },
 
   // ---- Grados ----
-  getGrados() { return this._data.grados; },
+  getGrados() { return this._filterByInst(this._data.grados); },
   getGrado(id) { return this._data.grados.find(g => g.id === id); },
   async addGrado(g) {
     g.id = 'g' + Date.now();
@@ -232,9 +275,9 @@ const DB = {
   },
 
   // ---- Grupos ----
-  getGrupos() { return this._data.grupos; },
+  getGrupos() { return this._filterByInst(this._data.grupos); },
   getGrupo(id) { return this._data.grupos.find(g => g.id === id); },
-  getGruposByGrado(gradoId) { return this._data.grupos.filter(g => g.gradoId === gradoId); },
+  getGruposByGrado(gradoId) { return this._filterByInst(this._data.grupos).filter(g => g.gradoId === gradoId); },
   async addGrupo(g) {
     g.id = 'gr' + Date.now();
     const { error } = await supabase.from('grupos').insert(this._snakeObj(g));
@@ -256,10 +299,10 @@ const DB = {
   },
 
   // ---- Materias ----
-  getMaterias() { return this._data.materias; },
+  getMaterias() { return this._filterByInst(this._data.materias); },
   getMateria(id) { return this._data.materias.find(m => m.id === id); },
-  getMateriasByGrado(gradoId) { return this._data.materias.filter(m => m.gradoId === gradoId); },
-  getMateriasByDocente(docenteId) { return this._data.materias.filter(m => m.docenteId === docenteId); },
+  getMateriasByGrado(gradoId) { return this._filterByInst(this._data.materias).filter(m => m.gradoId === gradoId); },
+  getMateriasByDocente(docenteId) { return this._filterByInst(this._data.materias).filter(m => m.docenteId === docenteId); },
   async addMateria(m) {
     m.id = 'm' + Date.now();
     const { error } = await supabase.from('materias').insert(this._snakeObj(m));
@@ -281,15 +324,17 @@ const DB = {
   },
 
   // ---- Estudiantes ----
-  getEstudiantes() { return this._data.estudiantes; },
+  getEstudiantes() { return this._filterByInst(this._data.estudiantes); },
   getEstudiante(id) { return this._data.estudiantes.find(e => e.id === id); },
-  getEstudiantesByGrupo(grupoId) { return this._data.estudiantes.filter(e => e.grupoId === grupoId && e.activo); },
-  getEstudiantesByGrado(gradoId) { return this._data.estudiantes.filter(e => e.gradoId === gradoId && e.activo); },
-  getEstudianteByDocumento(doc) { return this._data.estudiantes.find(e => e.documento === doc && e.activo); },
+  getEstudiantesByGrupo(grupoId) { return this._filterByInst(this._data.estudiantes).filter(e => e.grupoId === grupoId && e.activo); },
+  getEstudiantesByGrado(gradoId) { return this._filterByInst(this._data.estudiantes).filter(e => e.gradoId === gradoId && e.activo); },
+  getEstudianteByDocumento(doc) { return this._filterByInst(this._data.estudiantes).find(e => e.documento === doc && e.activo); },
   async addEstudiante(e) {
     e.id = 'e' + Date.now();
     e.creado = new Date().toISOString().split('T')[0];
     e.activo = true;
+    const s = Auth.getSession();
+    if (s && s.institucionId) e.institucionId = s.institucionId;
     const snake = this._snakeObj(e);
     if (typeof e.acudiente === 'object') snake.acudiente = JSON.stringify(snake.acudiente);
     const { error: estError } = await supabase.from('estudiantes').insert(snake);
@@ -348,14 +393,14 @@ const DB = {
   },
 
   // ---- Notas ----
-  getNotas() { return this._data.notas; },
-  getNotasByEstudiante(estudianteId) { return this._data.notas.filter(n => n.estudianteId === estudianteId); },
+  getNotas() { return this._filterByInst(this._data.notas); },
+  getNotasByEstudiante(estudianteId) { return this._filterByInst(this._data.notas).filter(n => n.estudianteId === estudianteId); },
   getNotasByGrupoMateriaPeriodo(grupoId, materiaId, periodoId) {
     const estudiantes = this.getEstudiantesByGrupo(grupoId).map(e => e.id);
-    return this._data.notas.filter(n => estudiantes.includes(n.estudianteId) && n.materiaId === materiaId && n.periodoId === periodoId);
+    return this._filterByInst(this._data.notas).filter(n => estudiantes.includes(n.estudianteId) && n.materiaId === materiaId && n.periodoId === periodoId);
   },
   getNotasByEstudianteMateriaPeriodo(eId, mId, pId) {
-    return this._data.notas.filter(n => n.estudianteId === eId && n.materiaId === mId && n.periodoId === pId);
+    return this._filterByInst(this._data.notas).filter(n => n.estudianteId === eId && n.materiaId === mId && n.periodoId === pId);
   },
   async addNota(n) {
     n.id = 'n' + Date.now() + Math.random().toString(36).substr(2, 5);
@@ -405,13 +450,13 @@ const DB = {
   },
 
   // ---- Asistencia ----
-  getAsistencia() { return this._data.asistencia; },
+  getAsistencia() { return this._filterByInst(this._data.asistencia); },
   getAsistenciaByFechaGrupoMateria(fecha, grupoId, materiaId) {
     const estudiantes = this.getEstudiantesByGrupo(grupoId).map(e => e.id);
-    return this._data.asistencia.filter(a => a.fecha === fecha && a.materiaId === materiaId && estudiantes.includes(a.estudianteId));
+    return this._filterByInst(this._data.asistencia).filter(a => a.fecha === fecha && a.materiaId === materiaId && estudiantes.includes(a.estudianteId));
   },
   getAsistenciaByEstudiante(estudianteId) {
-    return this._data.asistencia.filter(a => a.estudianteId === estudianteId);
+    return this._filterByInst(this._data.asistencia).filter(a => a.estudianteId === estudianteId);
   },
   async setAsistencia(estudianteId, materiaId, grupoId, fecha, estado, justificacion = null) {
     const existing = this._data.asistencia.find(a => a.estudianteId === estudianteId && a.materiaId === materiaId && a.fecha === fecha);
@@ -437,7 +482,7 @@ const DB = {
   },
 
   // ---- Actividades ----
-  getActividades() { return this._data.actividades; },
+  getActividades() { return this._filterByInst(this._data.actividades); },
   async addActividad(a) {
     a.id = 'act' + Date.now();
     const { error } = await supabase.from('actividades').insert(this._snakeObj(a));
@@ -453,7 +498,7 @@ const DB = {
   },
 
   // ---- Notificaciones ----
-  getNotificaciones(usuarioId) { return (this._data.notificaciones || []).filter(n => !usuarioId || n.usuarioId === usuarioId); },
+  getNotificaciones(usuarioId) { return this._filterByInst(this._data.notificaciones || []).filter(n => !usuarioId || n.usuarioId === usuarioId); },
   getNotificacionesNoLeidas(usuarioId) { return this.getNotificaciones(usuarioId).filter(n => !n.leida); },
   async marcarLeida(id) {
     const { error } = await supabase.from('notificaciones').update({ leida: true }).eq('id', id);
