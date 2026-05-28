@@ -142,15 +142,19 @@ const supabase = (() => {
           in(col, vals) { mopts.filters.push({ col, op: 'in', val: '(' + vals.map(String).join(',') + ')' }); return mchain; },
           then(onFulfilled, onRejected) {
             const promise = (async () => {
-              const token = await ensureToken();
-              const params = new URLSearchParams();
-              mopts.filters.forEach(f => params.set(f.col, f.op + '.' + f.val));
-              const qs = params.toString();
-              const url = `${BASE}/rest/v1/${table}${qs ? '?' + qs : ''}`;
-              const res = await fetch_(url, { method, headers: headers(token), body: data ? JSON.stringify(data) : null });
-              if (!res.ok) { const e = await res.json().catch(() => ({ message: res.statusText })); return { data: null, error: e }; }
-              if (method === 'DELETE' || res.status === 204) return { data: null, error: null };
-              return { data: await res.json(), error: null };
+              try {
+                const token = await ensureToken();
+                const params = new URLSearchParams();
+                mopts.filters.forEach(f => params.set(f.col, f.op + '.' + f.val));
+                const qs = params.toString();
+                const url = `${BASE}/rest/v1/${table}${qs ? '?' + qs : ''}`;
+                const res = await fetch_(url, { method, headers: headers(token), body: data ? JSON.stringify(data) : null });
+                if (!res.ok) { const e = await res.json().catch(() => ({ message: res.statusText })); return { data: null, error: e }; }
+                if (method === 'DELETE' || res.status === 204) return { data: null, error: null };
+                return { data: await res.json(), error: null };
+              } catch (err) {
+                return { data: null, error: { message: err.name === 'AbortError' ? 'Tiempo de espera agotado' : err.message } };
+              }
             })();
             return promise.then(onFulfilled, onRejected);
           },
@@ -179,16 +183,20 @@ const supabase = (() => {
         },
         then(onFulfilled, onRejected) {
           const promise = (async () => {
-            const token = await ensureToken();
-            const url = buildUrl(table, opts);
-            const res = await fetch_(url, { headers: headers(token) });
-            if (!res.ok) {
-              const e = await res.json().catch(() => ({ message: res.statusText }));
-              return { data: null, error: e };
+            try {
+              const token = await ensureToken();
+              const url = buildUrl(table, opts);
+              const res = await fetch_(url, { headers: headers(token) });
+              if (!res.ok) {
+                const e = await res.json().catch(() => ({ message: res.statusText }));
+                return { data: null, error: e };
+              }
+              let data = await res.json();
+              if (opts.single) data = data?.[0] || null;
+              return { data, error: null };
+            } catch (err) {
+              return { data: null, error: { message: err.name === 'AbortError' ? 'Tiempo de espera agotado' : err.message } };
             }
-            let data = await res.json();
-            if (opts.single) data = data?.[0] || null;
-            return { data, error: null };
           })();
           return promise.then(onFulfilled, onRejected);
         }
