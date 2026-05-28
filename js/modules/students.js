@@ -95,9 +95,9 @@ const Students = {
     if (this.viewMode === 'cards') {
       const pag = Utils.paginar(data, this.page, 12);
       content.innerHTML = `
-        <div class="grid-auto stagger animate-fadeIn" style="margin-top:0;border-top:1px solid var(--gray)">
+        <div class="grid-auto stagger animate-fadeIn" style="margin-top:0">
           ${pag.items.map(e => this.renderCard(e, config)).join('')}
-          ${!pag.items.length ? '<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">${Icons.users}</div><h3>Sin estudiantes</h3><p>Agrega el primer estudiante o ajusta los filtros</p></div>' : ''}
+          ${!pag.items.length ? `<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">${Icons.users}</div><h3>Sin estudiantes</h3><p>Agrega el primer estudiante o ajusta los filtros</p></div>` : ''}
         </div>
         <div id="students-pag"></div>`;
       content.querySelectorAll('.student-card').forEach(card => {
@@ -148,18 +148,32 @@ const Students = {
     const grupo = DB.getGrupo(e.grupoId);
     const pf = this.calcPromedioGeneral(e.id);
     const asist = DB.calcularPorcentajeAsistencia(e.id, null);
-    return `<div class="student-card" data-id="${e.id}" style="margin-top:0">
-      ${e.foto ? `<div class="avatar avatar-lg"><img src="${e.foto}" alt=""></div>` : `<div class="avatar avatar-lg" style="background:${color}">${Utils.avatarInitials(e.nombre,e.apellido)}</div>`}
-      <div class="student-info">
-        <h4>${e.nombre} ${e.apellido}</h4>
-        <p>${grado?.nombre||'—'} · ${grupo?.nombre||'—'}</p>
-        <div style="display:flex;gap:6px;margin-top:6px">
-          <span class="badge badge-neutral" style="font-size:10px">${Icons.calendar} ${asist}%</span>
-        </div>
+    const notaColor = Utils.colorNota(pf, config.escala.minAprobatorio);
+    const asisColor = Utils.colorAsistencia(asist);
+    return `<div class="student-card" data-id="${e.id}">
+      <div class="sc-avatar" style="background:${color}">
+        ${e.foto ? `<img src="${e.foto}" alt="">` : Utils.avatarInitials(e.nombre,e.apellido)}
       </div>
-      <div class="student-stats">
-        <div class="student-nota" style="color:${Utils.colorNota(pf, config.escala.minAprobatorio)}">${pf !== null ? Utils.formatNota(pf) : '—'}</div>
-        <div class="student-nota-label">Promedio</div>
+      <div class="sc-body">
+        <div class="sc-name">${e.apellido}, ${e.nombre}</div>
+        <div class="sc-meta">
+          <span>${Icons.cap} ${grado?.nombre||'—'} · ${grupo?.nombre||'—'}</span>
+          <span>${Icons.clipboard} ${e.tipoDoc||'TI'}: ${e.documento||'—'}</span>
+        </div>
+        <div class="sc-footer">
+          <div class="sc-stat ${pf !== null && pf >= config.escala.minAprobatorio ? 'sc-ok' : 'sc-warn'}">
+            <span class="sc-stat-val" style="color:${notaColor}">${pf !== null ? Utils.formatNota(pf) : '—'}</span>
+            <span class="sc-stat-lbl">Promedio</span>
+          </div>
+          <div class="sc-stat ${asist >= 80 ? 'sc-ok' : 'sc-warn'}">
+            <span class="sc-stat-val" style="color:${asisColor}">${asist}%</span>
+            <span class="sc-stat-lbl">Asistencia</span>
+          </div>
+          <div class="sc-acudiente">
+            <span>${Icons.users}</span>
+            <span>${e.acudiente?.nombre ? `Acud: ${e.acudiente.nombre}` : 'Sin acudiente'}</span>
+          </div>
+        </div>
       </div>
     </div>`;
   },
