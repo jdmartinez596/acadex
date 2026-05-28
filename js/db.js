@@ -172,8 +172,17 @@ const DB = {
   },
 
   // ---- Instituciones ----
-  getInstituciones() { return this._data.instituciones; },
-  getInstitucion(id) { return this._data.instituciones.find(i => i.id === id); },
+  getInstituciones() {
+    if (!this._data.instituciones.length) {
+      this._data.instituciones.push({ id: 'inst_default', nombre: 'Institución Principal', direccion: '', telefono: '', email: '', activo: true });
+      this._persistLocal();
+    }
+    return this._data.instituciones;
+  },
+  getInstitucion(id) {
+    if (!this._data.instituciones.length) this.getInstituciones();
+    return this._data.instituciones.find(i => i.id === id);
+  },
   async addInstitucion(data) {
     const id = 'inst_' + data.nombre.toLowerCase().replace(/[^a-z0-9]/g, '_');
     if (this._data.instituciones.find(i => i.id === id)) throw new Error('Ya existe una institución con ese nombre');
