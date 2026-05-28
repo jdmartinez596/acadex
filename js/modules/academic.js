@@ -9,17 +9,17 @@ const Academic = {
     container.innerHTML = `
       <div class="animate-fadeIn">
         <div class="section-header">
-          <h2><span class="section-icon">🏫</span> Estructura Académica</h2>
+          <h2><span class="section-icon">${Icons.school}</span> Estructura Académica</h2>
           <div class="section-actions">
             <button class="btn btn-accent" id="btn-add-main">+ Agregar</button>
           </div>
         </div>
         <div class="tabs">
-          <button class="tab-btn ${this.activeTab==='grados'?'active':''}" data-tab="grados">🎓 Grados</button>
-          <button class="tab-btn ${this.activeTab==='grupos'?'active':''}" data-tab="grupos">👥 Grupos</button>
-          <button class="tab-btn ${this.activeTab==='materias'?'active':''}" data-tab="materias">📚 Materias</button>
-          <button class="tab-btn ${this.activeTab==='periodos'?'active':''}" data-tab="periodos">📅 Períodos</button>
-          <button class="tab-btn ${this.activeTab==='actividades'?'active':''}" data-tab="actividades">🔔 Actividades</button>
+          <button class="tab-btn ${this.activeTab==='grados'?'active':''}" data-tab="grados">${Icons.cap} Grados</button>
+          <button class="tab-btn ${this.activeTab==='grupos'?'active':''}" data-tab="grupos">${Icons.users} Grupos</button>
+          <button class="tab-btn ${this.activeTab==='materias'?'active':''}" data-tab="materias">${Icons.book} Materias</button>
+          <button class="tab-btn ${this.activeTab==='periodos'?'active':''}" data-tab="periodos">${Icons.calendar} Períodos</button>
+          <button class="tab-btn ${this.activeTab==='actividades'?'active':''}" data-tab="actividades">${Icons.bell} Actividades</button>
         </div>
         <div id="academic-content"></div>
       </div>`;
@@ -60,13 +60,13 @@ const Academic = {
           const materias = DB.getMateriasByGrado(g.id);
           return `<div class="grade-node">
             <div class="grade-node-header" onclick="this.nextElementSibling.classList.toggle('open')">
-              <span style="font-size:24px">🎓</span>
+              <span style="font-size:24px">${Icons.cap}</span>
               <span class="grade-name">${g.nombre} — ${g.nivel}</span>
               <span class="grade-badge">${grupos.length} grupos</span>
               <span class="grade-badge" style="margin-left:4px">${materias.length} materias</span>
               ${session.rol === 'admin' ? `
-              <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation(); Academic.editGrado('${g.id}')" style="color:white">✏️</button>
-              <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation(); Academic.deleteGrado('${g.id}')" style="color:white">🗑️</button>` : ''}
+              <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation(); Academic.editGrado('${g.id}')" style="color:white">${Icons.edit}</button>
+              <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation(); Academic.deleteGrado('${g.id}')" style="color:white">${Icons.trash}</button>` : ''}
               <span style="margin-left:auto;color:rgba(255,255,255,.6);font-size:20px">⌄</span>
             </div>
             <div class="grade-node-body">
@@ -76,10 +76,10 @@ const Academic = {
                   const director = DB.getUsuario(gr.director);
                   const count = DB.getEstudiantesByGrupo(gr.id).length;
                   return `<div class="group-chip">
-                    <span>👥 ${gr.nombre}</span>
+                    <span>${Icons.users} ${gr.nombre}</span>
                     <span class="chip-count">${count} est.</span>
                     ${director ? `<span class="chip-count">· ${director.nombre}</span>` : ''}
-                    ${session.rol==='admin' ? `<button onclick="Academic.deleteGrupo('${gr.id}')" style="background:none;border:none;cursor:pointer;font-size:12px;color:var(--danger)">✕</button>` : ''}
+                    ${session.rol==='admin' ? `<button onclick="Academic.deleteGrupo('${gr.id}')" style="background:none;border:none;cursor:pointer;font-size:12px;color:var(--danger)">${Icons.close}</button>` : ''}
                   </div>`;
                 }).join('')}
                 ${session.rol==='admin' ? `<div class="group-chip" onclick="Academic.openAddGrupo('${g.id}')" style="border-style:dashed;color:var(--primary);cursor:pointer">+ Grupo</div>` : ''}
@@ -93,14 +93,14 @@ const Academic = {
                       <div class="materia-name">${m.nombre}</div>
                       <div class="materia-docente">${docente ? Utils.nombreCompleto(docente) : 'Sin docente'} · ${m.horas}h/sem</div>
                     </div>
-                    ${session.rol==='admin' ? `<button onclick="Academic.deleteMateria('${m.id}')" class="btn btn-ghost btn-sm btn-icon-sm" style="color:var(--danger)">🗑️</button>` : ''}
+                    ${session.rol==='admin' ? `<button onclick="Academic.deleteMateria('${m.id}')" class="btn btn-ghost btn-sm btn-icon-sm" style="color:var(--danger)">${Icons.trash}</button>` : ''}
                   </div>`;
                 }).join('')}
               </div>
             </div>
           </div>`;
         }).join('')}
-        ${!grados.length ? '<div class="empty-state"><div class="empty-icon">🎓</div><h3>Sin grados</h3><p>Agrega el primer grado académico</p></div>' : ''}
+        ${!grados.length ? '<div class="empty-state"><div class="empty-icon">${Icons.cap}</div><h3>Sin grados</h3><p>Agrega el primer grado académico</p></div>' : ''}
       </div>`;
   },
 
@@ -110,7 +110,7 @@ const Academic = {
     container.innerHTML = `
       <div class="table-wrapper animate-fadeIn">
         <div class="table-toolbar">
-          <div class="table-search"><span class="search-icon">🔍</span><input type="text" placeholder="Buscar grupo..." id="search-grupos"></div>
+          <div class="table-search"><span class="search-icon">${Icons.search}</span><input type="text" placeholder="Buscar grupo..." id="search-grupos"></div>
           <div class="table-filters">
             <select id="filter-grado-grupos">
               <option value="">Todos los grados</option>
@@ -141,8 +141,8 @@ const Academic = {
           <td>${director ? Utils.nombreCompleto(director) : '<span class="badge badge-neutral">Sin asignar</span>'}</td>
           <td><span class="badge badge-primary">${count} estudiantes</span></td>
           ${session.rol==='admin'?`<td class="td-actions">
-            <button class="btn btn-outline btn-sm" onclick="Academic.editGrupo('${g.id}')">✏️ Editar</button>
-            <button class="btn btn-danger btn-sm" onclick="Academic.deleteGrupo('${g.id}')">🗑️</button>
+            <button class="btn btn-outline btn-sm" onclick="Academic.editGrupo('${g.id}')">${Icons.edit} Editar</button>
+            <button class="btn btn-danger btn-sm" onclick="Academic.deleteGrupo('${g.id}')">${Icons.trash}</button>
           </td>`:''}
         </tr>`;
       }).join('') || '<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--text-muted)">Sin grupos</td></tr>';
@@ -160,7 +160,7 @@ const Academic = {
     container.innerHTML = `
       <div class="table-wrapper animate-fadeIn">
         <div class="table-toolbar">
-          <div class="table-search"><span class="search-icon">🔍</span><input type="text" placeholder="Buscar materia..." id="search-materias"></div>
+          <div class="table-search"><span class="search-icon">${Icons.search}</span><input type="text" placeholder="Buscar materia..." id="search-materias"></div>
           <div class="table-filters">
             <select id="filter-grado-mat"><option value="">Todos los grados</option>${grados.map(g=>`<option value="${g.id}">${g.nombre}</option>`).join('')}</select>
             <select id="filter-doc-mat"><option value="">Todos los docentes</option>${docentes.map(d=>`<option value="${d.id}">${Utils.nombreCompleto(d)}</option>`).join('')}</select>
@@ -191,8 +191,8 @@ const Academic = {
           <td>${docente ? Utils.nombreCompleto(docente) : '<span class="badge badge-neutral">Sin asignar</span>'}</td>
           <td><span class="badge badge-info">${m.horas}h</span></td>
           ${session.rol==='admin'?`<td class="td-actions">
-            <button class="btn btn-outline btn-sm" onclick="Academic.editMateria('${m.id}')">✏️</button>
-            <button class="btn btn-danger btn-sm" onclick="Academic.deleteMateria('${m.id}')">🗑️</button>
+            <button class="btn btn-outline btn-sm" onclick="Academic.editMateria('${m.id}')">${Icons.edit}</button>
+            <button class="btn btn-danger btn-sm" onclick="Academic.deleteMateria('${m.id}')">${Icons.trash}</button>
           </td>`:''}
         </tr>`;
       }).join('') || '<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--text-muted)">Sin materias</td></tr>';
@@ -214,7 +214,7 @@ const Academic = {
           return `<div class="card card-hover">
             <div class="card-body">
               <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-                <span style="font-size:32px">📅</span>
+                <span style="font-size:32px">${Icons.calendar}</span>
                 ${p.activo ? '<span class="badge badge-success">Activo</span>' : '<span class="badge badge-neutral">Inactivo</span>'}
               </div>
               <h3 style="font-size:20px;margin-bottom:8px">${p.nombre}</h3>
@@ -224,20 +224,20 @@ const Academic = {
                 <div><strong>Fin:</strong> ${fin}</div>
               </div>
               ${session.rol==='admin'?`<div style="margin-top:16px;display:flex;gap:8px">
-                ${!p.activo ? `<button class="btn btn-accent btn-sm" onclick="Academic.activarPeriodo('${p.id}')">✅ Activar</button>` : ''}
-                <button class="btn btn-outline btn-sm" onclick="Academic.editPeriodo('${p.id}')">✏️ Editar</button>
-                <button class="btn btn-danger btn-sm" onclick="Academic.deletePeriodo('${p.id}')">🗑️</button>
+                ${!p.activo ? `<button class="btn btn-accent btn-sm" onclick="Academic.activarPeriodo('${p.id}')">${Icons.check} Activar</button>` : ''}
+                <button class="btn btn-outline btn-sm" onclick="Academic.editPeriodo('${p.id}')">${Icons.edit} Editar</button>
+                <button class="btn btn-danger btn-sm" onclick="Academic.deletePeriodo('${p.id}')">${Icons.trash}</button>
               </div>`:''}
             </div>
           </div>`;
         }).join('')}
-        ${!periodos.length ? '<div class="empty-state"><div class="empty-icon">📅</div><h3>Sin períodos</h3><p>Crea el primer período académico</p></div>' : ''}
+        ${!periodos.length ? '<div class="empty-state"><div class="empty-icon">${Icons.calendar}</div><h3>Sin períodos</h3><p>Crea el primer período académico</p></div>' : ''}
       </div>`;
   },
 
   renderActividades(container, session) {
     const actividades = DB.getActividades().sort((a,b) => a.fecha.localeCompare(b.fecha));
-    const tiposIcon = { examen:'📝', proyecto:'🗂️', exposicion:'🎤', quiz:'✏️', tarea:'📌' };
+    const tiposIcon = { examen:'${Icons.fileText}', proyecto:'🗂️', exposicion:'${Icons.cap}', quiz:'${Icons.edit}', tarea:'${Icons.mapPin}' };
     container.innerHTML = `
       <div class="table-wrapper animate-fadeIn">
         <table><thead><tr>
@@ -250,11 +250,11 @@ const Academic = {
           return `<tr>
             <td><strong>${a.titulo}</strong><div style="font-size:12px;color:var(--text-muted)">${a.descripcion||''}</div></td>
             <td>${Utils.formatFecha(a.fecha)}</td>
-            <td>${tiposIcon[a.tipo]||'📌'} ${a.tipo}</td>
+            <td>${tiposIcon[a.tipo]||'${Icons.mapPin}'} ${a.tipo}</td>
             <td>${grado?.nombre||'—'}</td>
             <td>${grupo?.nombre||'—'}</td>
             <td>${materia?.nombre||'—'}</td>
-            ${session.rol==='admin'?`<td><button class="btn btn-danger btn-sm" onclick="Academic.deleteActividad('${a.id}')">🗑️</button></td>`:''}
+            ${session.rol==='admin'?`<td><button class="btn btn-danger btn-sm" onclick="Academic.deleteActividad('${a.id}')">${Icons.trash}</button></td>`:''}
           </tr>`;
         }).join('')}
         ${!actividades.length ? '<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--text-muted)">Sin actividades</td></tr>' : ''}
@@ -533,11 +533,11 @@ const Academic = {
           <div class="form-group"><label>Fecha</label><input class="form-control" type="date" name="fecha" value="${Utils.hoy()}"></div>
           <div class="form-group"><label>Tipo</label>
             <select class="form-control" name="tipo">
-              <option value="examen">📝 Examen</option>
-              <option value="quiz">✏️ Quiz</option>
+              <option value="examen">${Icons.fileText} Examen</option>
+              <option value="quiz">${Icons.edit} Quiz</option>
               <option value="proyecto">🗂️ Proyecto</option>
-              <option value="exposicion">🎤 Exposición</option>
-              <option value="tarea">📌 Tarea</option>
+              <option value="exposicion">${Icons.cap} Exposición</option>
+              <option value="tarea">${Icons.mapPin} Tarea</option>
             </select>
           </div>
         </div>
@@ -572,11 +572,11 @@ const Academic = {
     div.innerHTML = `
       <div class="modal-overlay"></div>
       <div class="modal-content">
-        <div class="modal-header"><h3>${titulo}</h3><button class="modal-close">✕</button></div>
+        <div class="modal-header"><h3>${titulo}</h3><button class="modal-close">${Icons.close}</button></div>
         <div class="modal-body">${bodyHTML}</div>
         <div class="modal-footer">
           <button class="btn btn-outline modal-close">Cancelar</button>
-          <button class="btn btn-primary" id="${id}-save">💾 Guardar</button>
+          <button class="btn btn-primary" id="${id}-save">${Icons.save} Guardar</button>
         </div>
       </div>`;
     document.body.appendChild(div);

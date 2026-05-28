@@ -10,13 +10,13 @@ const Reports = {
     container.innerHTML = `
       <div class="animate-fadeIn">
         <div class="section-header">
-          <h2><span class="section-icon">📊</span> Reportes y Boletines</h2>
+          <h2><span class="section-icon">${Icons.chart}</span> Reportes y Boletines</h2>
         </div>
         <div class="tabs">
-          <button class="tab-btn active" data-tab="boletin">📄 Boletín de Notas</button>
-          <button class="tab-btn" data-tab="ranking">🏆 Ranking</button>
-          <button class="tab-btn" data-tab="riesgo">⚠️ Riesgo Académico</button>
-          <button class="tab-btn" data-tab="estadisticas">📊 Estadísticas</button>
+          <button class="tab-btn active" data-tab="boletin">${Icons.fileText} Boletín de Notas</button>
+          <button class="tab-btn" data-tab="ranking">${Icons.trophy} Ranking</button>
+          <button class="tab-btn" data-tab="riesgo">${Icons.warning} Riesgo Académico</button>
+          <button class="tab-btn" data-tab="estadisticas">${Icons.chart} Estadísticas</button>
         </div>
         <div id="reports-content" class="animate-fadeIn"></div>
       </div>`;
@@ -76,7 +76,7 @@ const Reports = {
                   ${periodos.map(p=>`<option value="${p.id}">${p.nombre}</option>`).join('')}
                 </select>
               </div>
-              <button class="btn btn-primary" id="btn-generar-boletin">📄 Generar Boletín</button>
+              <button class="btn btn-primary" id="btn-generar-boletin">${Icons.fileText} Generar Boletín</button>
             </div>
           </div>
         </div>
@@ -121,7 +121,7 @@ const Reports = {
       <div class="boletin-preview" id="boletin-to-print">
         <!-- Header -->
         <div class="boletin-header-bg">
-          <div style="font-size:24px;margin-bottom:8px">🎓</div>
+          <div style="font-size:24px;margin-bottom:8px">${Icons.cap}</div>
           <h2>${inst.nombre}</h2>
           <p>${inst.direccion} · ${inst.telefono}</p>
           <div style="margin-top:12px;font-size:18px;font-weight:800;letter-spacing:2px">BOLETÍN DE CALIFICACIONES</div>
@@ -174,14 +174,14 @@ const Reports = {
                 </td>
                 ${r.promedios.map(p=>`<td style="text-align:center;font-weight:700;color:${p!==null?Utils.colorNota(p,config.escala.minAprobatorio):'var(--text-muted)'}">${p!==null?Utils.formatNota(p):'—'}</td>`).join('')}
                 <td style="text-align:center;font-size:18px;font-weight:800;color:${r.pf!==null?Utils.colorNota(r.pf,config.escala.minAprobatorio):'var(--text-muted)'}">${r.pf!==null?Utils.formatNota(r.pf):'—'}</td>
-                <td style="text-align:center">${r.pf!==null?(r.aprobado?'<span class="badge badge-success">✅ Aprobado</span>':'<span class="badge badge-danger">❌ Reprobado</span>'):'<span class="badge badge-neutral">Sin notas</span>'}</td>
+                <td style="text-align:center">${r.pf!==null?(r.aprobado?'<span class="badge badge-success">${Icons.check} Aprobado</span>':'<span class="badge badge-danger">${Icons.error} Reprobado</span>'):'<span class="badge badge-neutral">Sin notas</span>'}</td>
               </tr>`).join('')}
             </tbody>
             <tfoot>
               <tr style="background:var(--primary);color:white">
                 <td colspan="${periodosAMostrar.length+1}"><strong>PROMEDIO GENERAL</strong></td>
                 <td style="text-align:center;font-size:18px;font-weight:800">${promedioFinal!==null?Utils.formatNota(promedioFinal):'—'}</td>
-                <td style="text-align:center">${promedioFinal!==null?(promedioFinal>=config.escala.minAprobatorio?'<span style="background:rgba(46,204,113,.3);padding:3px 8px;border-radius:10px;font-size:12px">✅ Promovido</span>':'<span style="background:rgba(231,76,60,.3);padding:3px 8px;border-radius:10px;font-size:12px">❌ En riesgo</span>'):'—'}</td>
+                <td style="text-align:center">${promedioFinal!==null?(promedioFinal>=config.escala.minAprobatorio?'<span style="background:rgba(46,204,113,.3);padding:3px 8px;border-radius:10px;font-size:12px">${Icons.check} Promovido</span>':'<span style="background:rgba(231,76,60,.3);padding:3px 8px;border-radius:10px;font-size:12px">${Icons.error} En riesgo</span>'):'—'}</td>
               </tr>
             </tfoot>
           </table>
@@ -204,7 +204,7 @@ const Reports = {
 
       <!-- Botones de acción -->
       <div style="display:flex;gap:12px;justify-content:center;margin-top:20px">
-        <button class="btn btn-primary" onclick="Reports.exportarPDF('${estId}')">📄 Exportar PDF</button>
+        <button class="btn btn-primary" onclick="Reports.exportarPDF('${estId}')">${Icons.fileText} Exportar PDF</button>
         <button class="btn btn-outline" onclick="window.print()">🖨️ Imprimir</button>
       </div>`;
   },
@@ -294,7 +294,7 @@ const Reports = {
                   ${grupos.map(g=>`<option value="${g.id}">${g.nombre} (${DB.getGrado(g.gradoId)?.nombre||''})</option>`).join('')}
                 </select>
               </div>
-              <button class="btn btn-primary" id="btn-generar-ranking">🏆 Generar Ranking</button>
+              <button class="btn btn-primary" id="btn-generar-ranking">${Icons.trophy} Generar Ranking</button>
             </div>
           </div>
         </div>
@@ -336,7 +336,7 @@ const Reports = {
               </div>
             </td>
             <td><strong style="color:${Utils.colorAsistencia(e.asistencia)}">${e.asistencia}%</strong></td>
-            <td>${e.promedio>=config.escala.minAprobatorio?'<span class="badge badge-success">✅ Aprobado</span>':'<span class="badge badge-danger">❌ Reprobado</span>'}</td>
+            <td>${e.promedio>=config.escala.minAprobatorio?'<span class="badge badge-success">${Icons.check} Aprobado</span>':'<span class="badge badge-danger">${Icons.error} Reprobado</span>'}</td>
           </tr>`;
         }).join('')}
         ${!ranked.length?'<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-muted)">Sin datos de notas disponibles</td></tr>':''}
@@ -356,10 +356,10 @@ const Reports = {
     content.innerHTML = `
       <div class="animate-fadeIn">
         <div class="section-header" style="margin-bottom:20px">
-          <h3>⚠️ ${riesgo.length} estudiante(s) en situación de riesgo</h3>
-          <button class="btn btn-outline btn-sm" onclick="Reports.exportarRiesgo()">📤 Exportar</button>
+          <h3>${Icons.warning} ${riesgo.length} estudiante(s) en situación de riesgo</h3>
+          <button class="btn btn-outline btn-sm" onclick="Reports.exportarRiesgo()">${Icons.export} Exportar</button>
         </div>
-        ${!riesgo.length ? `<div class="empty-state"><div class="empty-icon">✅</div><h3>¡Excelente!</h3><p>No hay estudiantes en riesgo académico actualmente</p></div>` : `
+        ${!riesgo.length ? `<div class="empty-state"><div class="empty-icon">${Icons.check}</div><h3>¡Excelente!</h3><p>No hay estudiantes en riesgo académico actualmente</p></div>` : `
         <div style="display:flex;flex-direction:column;gap:12px">
           ${riesgo.map(r => {
             const e = r.estudiante;
@@ -375,8 +375,8 @@ const Reports = {
                   <div style="font-size:13px;color:var(--text-muted);margin-top:2px">${grado?.nombre||'—'} · ${grupo?.nombre||'—'}</div>
                   <div style="margin-top:8px">
                     ${isNota
-                      ? `<span class="badge badge-danger">📝 Nota baja en ${r.materia?.nombre}: <strong>${Utils.formatNota(r.promedio)}</strong></span>`
-                      : `<span class="badge badge-warning">📅 Asistencia crítica: <strong>${r.promedio}%</strong></span>`
+                      ? `<span class="badge badge-danger">${Icons.fileText} Nota baja en ${r.materia?.nombre}: <strong>${Utils.formatNota(r.promedio)}</strong></span>`
+                      : `<span class="badge badge-warning">${Icons.calendar} Asistencia crítica: <strong>${r.promedio}%</strong></span>`
                     }
                   </div>
                 </div>
@@ -384,7 +384,7 @@ const Reports = {
                   <div style="font-size:32px;font-weight:800;color:${isNota?Utils.colorNota(r.promedio,config.escala.minAprobatorio):Utils.colorAsistencia(r.promedio)}">${isNota?Utils.formatNota(r.promedio):`${r.promedio}%`}</div>
                   <div style="font-size:11px;color:var(--text-muted)">${isNota?'Promedio':'Asistencia'}</div>
                 </div>
-                <button class="btn btn-outline btn-sm" onclick="Students.verPerfil('${e.id}', Auth.getSession())">👁️ Ver perfil</button>
+                <button class="btn btn-outline btn-sm" onclick="Students.verPerfil('${e.id}', Auth.getSession())">${Icons.view} Ver perfil</button>
               </div>
             </div>`;
           }).join('')}
@@ -417,15 +417,15 @@ const Reports = {
     content.innerHTML = `
       <div class="grid-2 animate-fadeIn" style="gap:20px">
         <div class="chart-wrapper">
-          <div class="chart-header"><h3>📊 Promedio por Grado</h3></div>
+          <div class="chart-header"><h3>${Icons.chart} Promedio por Grado</h3></div>
           <div class="chart-body"><canvas id="chart-por-grado"></canvas></div>
         </div>
         <div class="chart-wrapper">
-          <div class="chart-header"><h3>📈 Distribución General</h3></div>
+          <div class="chart-header"><h3>${Icons.trendingUp} Distribución General</h3></div>
           <div class="chart-body"><canvas id="chart-dist-general"></canvas></div>
         </div>
         <div class="chart-wrapper col-full">
-          <div class="chart-header"><h3>📋 Comparativo de Materias por Grado</h3></div>
+          <div class="chart-header"><h3>${Icons.clipboard} Comparativo de Materias por Grado</h3></div>
           <div class="chart-body"><canvas id="chart-comparativo"></canvas></div>
         </div>
       </div>`;

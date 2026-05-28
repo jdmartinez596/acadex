@@ -130,6 +130,9 @@
   border-radius: 0 3px 3px 0;
 }
 
+.nav-icon { display:inline-flex; align-items:center; justify-content:center; width:20px; height:20px; }
+.nav-icon svg { width:20px; height:20px; }
+
 #sidebar-overlay {
   display: none;
   position: fixed;

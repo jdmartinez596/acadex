@@ -15,25 +15,25 @@ const Dashboard = {
         <!-- KPIs -->
         <div class="grid-4 stagger" style="margin-bottom:24px;">
           <div class="kpi-card kpi-blue card-hover animate-fadeIn">
-            <div class="kpi-icon">👥</div>
+            <div class="kpi-icon">${Icons.users}</div>
             <div class="kpi-value">${stats.totalEstudiantes}</div>
             <div class="kpi-label">Total Estudiantes</div>
             <div class="kpi-change up">▲ Activos este período</div>
           </div>
           <div class="kpi-card kpi-green card-hover animate-fadeIn">
-            <div class="kpi-icon">⭐</div>
+            <div class="kpi-icon">${Icons.star}</div>
             <div class="kpi-value">${Utils.formatNota(stats.promedioGeneral)}</div>
             <div class="kpi-label">Promedio General</div>
             <div class="kpi-change ${stats.promedioGeneral >= config.escala.minAprobatorio ? 'up' : 'down'}">${stats.promedioGeneral >= config.escala.minAprobatorio ? '▲ Sobre el mínimo' : '▼ Bajo el mínimo'}</div>
           </div>
           <div class="kpi-card kpi-orange card-hover animate-fadeIn">
-            <div class="kpi-icon">📅</div>
+            <div class="kpi-icon">${Icons.calendar}</div>
             <div class="kpi-value">${stats.porcentajeAsistencia}%</div>
             <div class="kpi-label">% Asistencia General</div>
             <div class="kpi-change ${stats.porcentajeAsistencia >= 80 ? 'up' : 'down'}">${stats.porcentajeAsistencia >= 80 ? '▲ Dentro del rango' : '▼ Por debajo del 80%'}</div>
           </div>
           <div class="kpi-card kpi-purple card-hover animate-fadeIn">
-            <div class="kpi-icon">📚</div>
+            <div class="kpi-icon">${Icons.book}</div>
             <div class="kpi-value">${stats.materiasActivas}</div>
             <div class="kpi-label">Materias Activas</div>
             <div class="kpi-change up">${stats.totalDocentes} docentes</div>
@@ -45,7 +45,7 @@ const Dashboard = {
           <!-- Rendimiento por período -->
           <div class="chart-wrapper animate-fadeIn">
             <div class="chart-header">
-              <h3>📈 Rendimiento por Período</h3>
+              <h3>${Icons.trendingUp} Rendimiento por Período</h3>
               <select id="chart-grado-filter" class="form-control" style="width:140px;padding:6px 10px;">
                 <option value="">Todos los grados</option>
                 ${DB.getGrados().map(g => `<option value="${g.id}">${g.nombre}</option>`).join('')}
@@ -57,7 +57,7 @@ const Dashboard = {
           <!-- Materias comparison -->
           <div class="chart-wrapper animate-fadeIn">
             <div class="chart-header">
-              <h3>📊 Promedio por Materia</h3>
+              <h3>${Icons.chart} Promedio por Materia</h3>
               <span class="badge badge-primary">${periodoActivo ? periodoActivo.nombre : 'General'}</span>
             </div>
             <div class="chart-body"><canvas id="chart-materias"></canvas></div>
@@ -66,7 +66,7 @@ const Dashboard = {
           <!-- Alertas -->
           <div class="card animate-fadeIn">
             <div class="card-header">
-              <h3>⚠️ Alertas Académicas</h3>
+              <h3>${Icons.warning} Alertas Académicas</h3>
               <span class="badge badge-danger">${stats.estudiantesEnRiesgo.length}</span>
             </div>
             <div class="card-body" style="padding:12px;">
@@ -77,7 +77,7 @@ const Dashboard = {
           <!-- Calendario -->
           <div class="card animate-fadeIn">
             <div class="card-header">
-              <h3>📅 Calendario Académico</h3>
+              <h3>${Icons.calendar} Calendario Académico</h3>
             </div>
             <div class="card-body"><div id="mini-calendar"></div></div>
           </div>
@@ -85,7 +85,7 @@ const Dashboard = {
           <!-- Próximas actividades -->
           <div class="card col-full animate-fadeIn">
             <div class="card-header">
-              <h3>🔔 Próximas Actividades</h3>
+              <h3>${Icons.bell} Próximas Actividades</h3>
               <button class="btn btn-accent btn-sm" onclick="App.navigate('academic')">+ Agregar</button>
             </div>
             <div class="card-body" style="padding:0;">
@@ -106,11 +106,11 @@ const Dashboard = {
   },
 
   renderAlertas(riesgo, minAprobatorio) {
-    if (!riesgo.length) return '<div class="empty-state" style="padding:30px"><div class="empty-icon">✅</div><p>Sin alertas académicas activas</p></div>';
+    if (!riesgo.length) return `<div class="empty-state" style="padding:30px"><div class="empty-icon">${Icons.success}</div><p>Sin alertas académicas activas</p></div>`;
     const shown = riesgo.slice(0, 6);
     return `<div class="alert-list">${shown.map(r => {
       const isPeligro = r.tipo === 'nota' ? r.promedio < minAprobatorio - 1 : r.promedio < 70;
-      const icon = r.tipo === 'nota' ? '📝' : '📅';
+      const icon = r.tipo === 'nota' ? Icons.grades : Icons.present;
       const label = r.tipo === 'nota'
         ? `Promedio bajo en ${r.materia?.nombre || 'Materia'}`
         : 'Asistencia crítica';
@@ -132,7 +132,7 @@ const Dashboard = {
   renderActividades() {
     const actividades = DB.getActividades().sort((a,b) => a.fecha.localeCompare(b.fecha)).slice(0, 6);
     if (!actividades.length) return '<div class="empty-state" style="padding:30px"><p>No hay actividades programadas</p></div>';
-    const tiposIcon = { examen:'📝', proyecto:'🗂️', exposicion:'🎤', quiz:'✏️', tarea:'📌' };
+    const tiposIcon = { examen: Icons.fileText, proyecto: Icons.file, exposicion: Icons.cap, quiz: Icons.edit, tarea: Icons.book };
     return `<table><thead><tr>
       <th>Actividad</th><th>Fecha</th><th>Tipo</th><th>Grado/Grupo</th><th>Materia</th>
     </tr></thead><tbody>${actividades.map(a => {
@@ -144,7 +144,7 @@ const Dashboard = {
       return `<tr>
         <td><strong>${a.titulo}</strong> ${pronto ? '<span class="badge badge-warning">Próximo</span>' : ''}</td>
         <td>${Utils.formatFecha(a.fecha)}</td>
-        <td>${tiposIcon[a.tipo]||'📌'} ${a.tipo}</td>
+        <td>${tiposIcon[a.tipo]||Icons.mapPin} ${a.tipo}</td>
         <td>${grado?.nombre||''} ${grupo?.nombre||''}</td>
         <td>${materia?.nombre||'—'}</td>
       </tr>`;

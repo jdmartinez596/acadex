@@ -16,10 +16,10 @@ const Students = {
     container.innerHTML = `
       <div class="animate-fadeIn">
         <div class="section-header">
-          <h2><span class="section-icon">👥</span> Estudiantes</h2>
+          <h2><span class="section-icon">${Icons.users}</span> Estudiantes</h2>
           <div class="section-actions">
-            <button class="btn btn-outline btn-sm" id="btn-import-est" title="Importar CSV">📥 Importar</button>
-            <button class="btn btn-outline btn-sm" id="btn-export-est">📤 Exportar</button>
+            <button class="btn btn-outline btn-sm" id="btn-import-est" title="Importar CSV">${Icons.import} Importar</button>
+            <button class="btn btn-outline btn-sm" id="btn-export-est">${Icons.export} Exportar</button>
             ${session.rol !== 'estudiante' ? `<button class="btn btn-accent" id="btn-add-est">+ Nuevo Estudiante</button>` : ''}
           </div>
         </div>
@@ -40,7 +40,7 @@ const Students = {
     const grupos = DB.getGrupos();
     return `<div class="table-wrapper" style="margin-bottom:0;border-bottom:none;border-radius:12px 12px 0 0">
       <div class="table-toolbar">
-        <div class="table-search"><span class="search-icon">🔍</span>
+        <div class="table-search"><span class="search-icon">${Icons.search}</span>
           <input type="text" placeholder="Buscar por nombre, apellido o documento..." id="search-est" value="${this.query}">
         </div>
         <div class="table-filters">
@@ -52,8 +52,8 @@ const Students = {
             <option value="">Todos los grupos</option>
             ${grupos.map(g=>`<option value="${g.id}" ${g.id===this.grupoFilter?'selected':''}>${g.nombre}</option>`).join('')}
           </select>
-          <button class="btn ${this.viewMode==='tabla'?'btn-primary':'btn-outline'} btn-sm" id="view-tabla">☰ Tabla</button>
-          <button class="btn ${this.viewMode==='cards'?'btn-primary':'btn-outline'} btn-sm" id="view-cards">⊞ Cards</button>
+          <button class="btn ${this.viewMode==='tabla'?'btn-primary':'btn-outline'} btn-sm" id="view-tabla">${Icons.menu} Tabla</button>
+          <button class="btn ${this.viewMode==='cards'?'btn-primary':'btn-outline'} btn-sm" id="view-cards">${Icons.view} Cards</button>
         </div>
       </div>
     </div>`;
@@ -98,7 +98,7 @@ const Students = {
       content.innerHTML = `
         <div class="grid-auto stagger animate-fadeIn" style="margin-top:0;border-top:1px solid var(--gray)">
           ${pag.items.map(e => this.renderCard(e, config)).join('')}
-          ${!pag.items.length ? '<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">👥</div><h3>Sin estudiantes</h3><p>Agrega el primer estudiante o ajusta los filtros</p></div>' : ''}
+          ${!pag.items.length ? '<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">${Icons.users}</div><h3>Sin estudiantes</h3><p>Agrega el primer estudiante o ajusta los filtros</p></div>' : ''}
         </div>
         <div id="students-pag"></div>`;
       content.querySelectorAll('.student-card').forEach(card => {
@@ -134,8 +134,8 @@ const Students = {
           <td><span style="font-weight:700;color:${Utils.colorAsistencia(asist)}">${asist}%</span></td>
           <td><div style="font-size:12px"><div style="font-weight:600">${e.acudiente?.nombre||'—'}</div><div style="color:var(--text-muted)">${e.acudiente?.telefono||''}</div></div></td>
           <td onclick="event.stopPropagation()" class="td-actions">
-            <button class="btn btn-outline btn-sm" onclick="Students.openForm('${e.id}', Auth.getSession())">✏️</button>
-            <button class="btn btn-danger btn-sm" onclick="Students.eliminar('${e.id}')">🗑️</button>
+            <button class="btn btn-outline btn-sm" onclick="Students.openForm('${e.id}', Auth.getSession())">${Icons.edit}</button>
+            <button class="btn btn-danger btn-sm" onclick="Students.eliminar('${e.id}')">${Icons.trash}</button>
           </td>
         </tr>`;
       }).join('') || '<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text-muted)">Sin estudiantes que coincidan</td></tr>';
@@ -155,7 +155,7 @@ const Students = {
         <h4>${e.nombre} ${e.apellido}</h4>
         <p>${grado?.nombre||'—'} · ${grupo?.nombre||'—'}</p>
         <div style="display:flex;gap:6px;margin-top:6px">
-          <span class="badge badge-neutral" style="font-size:10px">📅 ${asist}%</span>
+          <span class="badge badge-neutral" style="font-size:10px">${Icons.calendar} ${asist}%</span>
         </div>
       </div>
       <div class="student-stats">
@@ -194,7 +194,7 @@ const Students = {
       <div class="modal-content modal-xl" style="max-height:90vh">
         <div class="modal-header">
           <h3>Perfil del Estudiante</h3>
-          <button class="modal-close">✕</button>
+          <button class="modal-close">${Icons.close}</button>
         </div>
         <div class="modal-body" style="padding:0">
           <!-- Header del perfil -->
@@ -203,10 +203,10 @@ const Students = {
             <div class="profile-info">
               <h2>${est.nombre} ${est.apellido}</h2>
               <div class="profile-meta">
-                <div class="profile-meta-item">📋 ${est.tipoDoc||'TI'}: ${est.documento||'—'}</div>
-                <div class="profile-meta-item">🎓 ${grado?.nombre||'—'} · ${grupo?.nombre||'—'}</div>
-                <div class="profile-meta-item">🎂 ${Utils.calcularEdad(est.fechaNacimiento)} años</div>
-                <div class="profile-meta-item">📧 ${est.email||'—'}</div>
+                <div class="profile-meta-item">${Icons.clipboard} ${est.tipoDoc||'TI'}: ${est.documento||'—'}</div>
+                <div class="profile-meta-item">${Icons.cap} ${grado?.nombre||'—'} · ${grupo?.nombre||'—'}</div>
+                <div class="profile-meta-item">${Icons.cake} ${Utils.calcularEdad(est.fechaNacimiento)} años</div>
+                <div class="profile-meta-item">${Icons.mail} ${est.email||'—'}</div>
               </div>
               <div style="display:flex;gap:16px;margin-top:16px">
                 <div style="text-align:center;background:rgba(255,255,255,.15);padding:12px 20px;border-radius:12px">
@@ -223,15 +223,15 @@ const Students = {
                 </div>
               </div>
             </div>
-            ${session.rol !== 'estudiante' ? `<button class="btn btn-accent" onclick="Students.openForm('${id}', Auth.getSession())">✏️ Editar</button>` : ''}
+            ${session.rol !== 'estudiante' ? `<button class="btn btn-accent" onclick="Students.openForm('${id}', Auth.getSession())">${Icons.edit} Editar</button>` : ''}
           </div>
 
           <!-- Pestañas del perfil -->
           <div style="padding:20px 24px">
             <div class="tabs" style="margin-bottom:20px">
-              <button class="tab-btn active" data-ptab="notas">📝 Notas</button>
-              <button class="tab-btn" data-ptab="asistencia">✅ Asistencia</button>
-              <button class="tab-btn" data-ptab="info">👤 Información</button>
+              <button class="tab-btn active" data-ptab="notas">${Icons.fileText} Notas</button>
+              <button class="tab-btn" data-ptab="asistencia">${Icons.check} Asistencia</button>
+              <button class="tab-btn" data-ptab="info">${Icons.users} Información</button>
             </div>
             <div id="profile-tab-content"></div>
           </div>
@@ -253,7 +253,7 @@ const Students = {
               <td><div style="display:flex;align-items:center;gap:8px"><div style="width:8px;height:8px;border-radius:50%;background:${m.color}"></div><strong>${m.nombre}</strong></div></td>
               ${promedios.map(p => `<td style="font-weight:600;color:${p!==null?Utils.colorNota(p,config.escala.minAprobatorio):'var(--text-muted)'}">${p!==null?Utils.formatNota(p):'—'}</td>`).join('')}
               <td style="font-weight:800;font-size:16px;color:${prom!==null?Utils.colorNota(prom,config.escala.minAprobatorio):'var(--text-muted)'}">${prom!==null?Utils.formatNota(prom):'—'}</td>
-              <td>${prom!==null ? (aprobado?'<span class="badge badge-success">✅ Aprobado</span>':'<span class="badge badge-danger">❌ Reprobado</span>') : '<span class="badge badge-neutral">Sin notas</span>'}</td>
+              <td>${prom!==null ? (aprobado?'<span class="badge badge-success">${Icons.check} Aprobado</span>':'<span class="badge badge-danger">${Icons.error} Reprobado</span>') : '<span class="badge badge-neutral">Sin notas</span>'}</td>
             </tr>`;
           }).join('')}</tbody></table>`;
       } else if (tab === 'asistencia') {
@@ -285,16 +285,16 @@ const Students = {
         c.innerHTML = `<div class="grid-2" style="gap:20px">
           <div class="card"><div class="card-body">
             <h4 style="margin-bottom:16px;color:var(--text-muted);font-size:12px;text-transform:uppercase;letter-spacing:.5px">Datos Personales</h4>
-            ${[['📋','Documento',`${est.tipoDoc||'TI'}: ${est.documento}`],['🎂','Nacimiento',Utils.formatFecha(est.fechaNacimiento)],
-               ['📱','Teléfono',est.telefono],['🏠','Dirección',est.direccion],['📧','Email',est.email]]
+            ${[['${Icons.clipboard}','Documento',`${est.tipoDoc||'TI'}: ${est.documento}`],['${Icons.cake}','Nacimiento',Utils.formatFecha(est.fechaNacimiento)],
+               ['${Icons.phone}','Teléfono',est.telefono],['${Icons.home}','Dirección',est.direccion],['${Icons.mail}','Email',est.email]]
                .map(([ico,lbl,val]) => `<div style="display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--gray-light);font-size:13px">
                   <span>${ico}</span><span style="color:var(--text-muted);min-width:90px">${lbl}:</span><strong>${val||'—'}</strong>
                </div>`).join('')}
           </div></div>
           <div class="card"><div class="card-body">
             <h4 style="margin-bottom:16px;color:var(--text-muted);font-size:12px;text-transform:uppercase;letter-spacing:.5px">Datos del Acudiente</h4>
-            ${est.acudiente ? [['👤','Nombre',est.acudiente.nombre],['👨‍👩‍👧','Parentesco',est.acudiente.parentesco],
-               ['📱','Teléfono',est.acudiente.telefono],['📧','Email',est.acudiente.email]]
+            ${est.acudiente ? [['${Icons.users}','Nombre',est.acudiente.nombre],['👨‍👩‍👧','Parentesco',est.acudiente.parentesco],
+               ['${Icons.phone}','Teléfono',est.acudiente.telefono],['${Icons.mail}','Email',est.acudiente.email]]
                .map(([ico,lbl,val]) => `<div style="display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--gray-light);font-size:13px">
                   <span>${ico}</span><span style="color:var(--text-muted);min-width:90px">${lbl}:</span><strong>${val||'—'}</strong>
                </div>`).join('') : '<p style="color:var(--text-muted)">Sin datos de acudiente</p>'}
@@ -316,21 +316,21 @@ const Students = {
     modal.innerHTML = `
       <div class="modal-overlay"></div>
       <div class="modal-content modal-lg">
-        <div class="modal-header"><h3>${est ? 'Editar' : 'Nuevo'} Estudiante</h3><button class="modal-close">✕</button></div>
+        <div class="modal-header"><h3>${est ? 'Editar' : 'Nuevo'} Estudiante</h3><button class="modal-close">${Icons.close}</button></div>
         <div class="modal-body">
           <form id="form-estudiante">
             <!-- Foto -->
             <div style="display:flex;justify-content:center;margin-bottom:24px">
               <div>
                 <div class="photo-preview" id="photo-prev" onclick="document.getElementById('foto-input').click()">
-                  ${est?.foto ? `<img src="${est.foto}" id="foto-img">` : `<span id="foto-icon">📷</span>`}
+                  ${est?.foto ? `<img src="${est.foto}" id="foto-img">` : `<span id="foto-icon">${Icons.camera}</span>`}
                 </div>
                 <input type="file" id="foto-input" accept="image/*" style="display:none">
                 <div style="text-align:center;font-size:12px;color:var(--text-muted);margin-top:6px">Clic para agregar foto</div>
               </div>
             </div>
             <!-- Datos personales -->
-            <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px">👤 Datos Personales</div>
+            <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px">${Icons.users} Datos Personales</div>
             <div class="form-row col-2">
               <div class="form-group"><label>Nombre <span class="required">*</span></label><input class="form-control" name="nombre" value="${est?.nombre||''}" required></div>
               <div class="form-group"><label>Apellido <span class="required">*</span></label><input class="form-control" name="apellido" value="${est?.apellido||''}" required></div>
@@ -353,7 +353,7 @@ const Students = {
             <div class="form-group"><label>Dirección</label><input class="form-control" name="direccion" value="${est?.direccion||''}"></div>
             
             <!-- Académico -->
-            <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin:20px 0 12px">🎓 Información Académica</div>
+            <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin:20px 0 12px">${Icons.cap} Información Académica</div>
             <div class="form-row col-2">
               <div class="form-group"><label>Grado <span class="required">*</span></label>
                 <select class="form-control" name="gradoId" id="form-grado-sel" required>
@@ -387,7 +387,7 @@ const Students = {
         </div>
         <div class="modal-footer">
           <button class="btn btn-outline modal-close">Cancelar</button>
-          <button class="btn btn-primary" id="save-est-btn">💾 Guardar Estudiante</button>
+          <button class="btn btn-primary" id="save-est-btn">${Icons.save} Guardar Estudiante</button>
         </div>
       </div>`;
     document.body.appendChild(modal);
@@ -490,28 +490,28 @@ const Students = {
     modal.innerHTML = `
       <div class="modal-overlay"></div>
       <div class="modal-content">
-        <div class="modal-header"><h3>📥 Importar Estudiantes</h3><button class="modal-close">✕</button></div>
+        <div class="modal-header"><h3>${Icons.import} Importar Estudiantes</h3><button class="modal-close">${Icons.close}</button></div>
         <div class="modal-body">
           <div class="import-steps">
             <div class="import-step active"><span class="import-step-num">1</span>Descargar plantilla</div>
             <div class="import-step"><span class="import-step-num">2</span>Completar datos</div>
             <div class="import-step"><span class="import-step-num">3</span>Subir archivo</div>
           </div>
-          <div class="alert alert-info"><span class="alert-icon">ℹ️</span>
+          <div class="alert alert-info"><span class="alert-icon">${Icons.info}</span>
             <div class="alert-text"><strong>Formato requerido</strong>Las columnas deben ser: Apellido, Nombre, Documento, Grado, Grupo, Email, Teléfono, Acudiente</div>
           </div>
           <div class="file-drop-zone" id="import-zone">
-            <div class="drop-icon">📄</div>
+            <div class="drop-icon">${Icons.file}</div>
             <p>Arrastra tu archivo CSV aquí o <span onclick="document.getElementById('import-file').click()">haz clic para seleccionar</span></p>
             <p style="font-size:12px;margin-top:4px;color:var(--text-muted)">Formatos: .csv</p>
             <input type="file" id="import-file" accept=".csv" style="display:none">
           </div>
           <div id="import-preview" style="margin-top:16px"></div>
-          <button class="btn btn-outline btn-sm" style="margin-top:12px" onclick="Students.descargarPlantilla()">⬇️ Descargar plantilla CSV</button>
+          <button class="btn btn-outline btn-sm" style="margin-top:12px" onclick="Students.descargarPlantilla()">${Icons.download} Descargar plantilla CSV</button>
         </div>
         <div class="modal-footer">
           <button class="btn btn-outline modal-close">Cancelar</button>
-          <button class="btn btn-primary" id="btn-do-import" disabled>📥 Importar</button>
+          <button class="btn btn-primary" id="btn-do-import" disabled>${Icons.import} Importar</button>
         </div>
       </div>`;
     document.body.appendChild(modal);
@@ -531,7 +531,7 @@ const Students = {
           return obj;
         }).filter(r => r['Nombre']);
         document.getElementById('import-preview').innerHTML = `
-          <div class="alert alert-success"><span>✅</span><div><strong>${importData.length} registros detectados</strong></div></div>
+          <div class="alert alert-success"><span>${Icons.check}</span><div><strong>${importData.length} registros detectados</strong></div></div>
           <div style="max-height:200px;overflow-y:auto;font-size:12px">${importData.slice(0,5).map(r=>
             `<div style="padding:4px 0;border-bottom:1px solid var(--gray-light)">${r['Apellido']||''}, ${r['Nombre']||''} — ${r['Grado']||''} ${r['Grupo']||''}</div>`
           ).join('')}${importData.length>5?`<div style="padding:4px 0;color:var(--text-muted)">...y ${importData.length-5} más</div>`:''}</div>`;

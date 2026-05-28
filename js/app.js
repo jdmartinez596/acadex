@@ -6,13 +6,13 @@ const App = {
   currentRoute: null,
 
   routes: {
-    dashboard:    { label: 'Dashboard',          icon: '📊', module: 'Dashboard',   roles: ['admin','docente','estudiante'] },
-    academic:     { label: 'Estructura Académica', icon: '🏫', module: 'Academic',    roles: ['admin','docente'] },
-    students:     { label: 'Estudiantes',          icon: '👥', module: 'Students',    roles: ['admin','docente'] },
-    grades:       { label: 'Notas',                icon: '📝', module: 'Grades',      roles: ['admin','docente','estudiante'] },
-    attendance:   { label: 'Asistencia',           icon: '✅', module: 'Attendance',  roles: ['admin','docente'] },
-    reports:      { label: 'Reportes',             icon: '📊', module: 'Reports',     roles: ['admin','docente','estudiante'] },
-    settings:     { label: 'Configuración',        icon: '⚙️', module: 'Settings',    roles: ['admin'] }
+    dashboard:    { label: 'Dashboard',          icon: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="12" width="4" height="9" rx="1"/><rect x="10" y="7" width="4" height="14" rx="1"/><rect x="17" y="3" width="4" height="18" rx="1"/></svg>', module: 'Dashboard',   roles: ['admin','docente','estudiante'] },
+    academic:     { label: 'Estructura Académica', icon: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3"/></svg>', module: 'Academic',    roles: ['admin','docente'] },
+    students:     { label: 'Estudiantes',          icon: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>', module: 'Students',    roles: ['admin','docente'] },
+    grades:       { label: 'Notas',                icon: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>', module: 'Grades',      roles: ['admin','docente','estudiante'] },
+    attendance:   { label: 'Asistencia',           icon: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>', module: 'Attendance',  roles: ['admin','docente'] },
+    reports:      { label: 'Reportes',             icon: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>', module: 'Reports',     roles: ['admin','docente','estudiante'] },
+    settings:     { label: 'Configuración',        icon: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>', module: 'Settings',    roles: ['admin'] }
   },
 
   navGroups: {
@@ -177,7 +177,7 @@ const App = {
   renderNotifications(session) {
     const dropdown = document.getElementById('notif-dropdown');
     const notifs = DB.getNotificaciones(session.userId).slice(0, 8);
-    const icons = { alerta: '⚠️', asistencia: '📋', sistema: 'ℹ️' };
+    const icons = { alerta: '${Icons.warning}', asistencia: '${Icons.clipboard}', sistema: '${Icons.info}' };
     let html = `<div class="notif-header">
       <span>Notificaciones</span>
       <a href="#" onclick="DB.marcarTodasLeidas('${session.userId}'); App.updateNotifBadge(Auth.getSession()); return false;" style="font-size:12px;color:var(--primary);">Marcar todas</a>
@@ -186,7 +186,7 @@ const App = {
     if (!notifs.length) html += '<div style="padding:24px;text-align:center;color:var(--text-muted);">Sin notificaciones</div>';
     notifs.forEach(n => {
       html += `<div class="notif-item ${n.leida?'':'unread'}" onclick="DB.marcarLeida('${n.id}'); App.updateNotifBadge(Auth.getSession())">
-        <span class="notif-icon">${icons[n.tipo]||'📌'}</span>
+        <span class="notif-icon">${icons[n.tipo]||'${Icons.mapPin}'}</span>
         <div class="notif-text">
           <div class="notif-msg">${n.mensaje}</div>
           <div class="notif-time">${Utils.formatFechaCorta(n.fecha)}</div>
@@ -236,7 +236,7 @@ const App = {
       if (mod && mod.render) {
         mod.render(content, session);
       } else {
-        content.innerHTML = `<div class="empty-state"><div class="empty-icon">🚧</div><h3>Módulo en construcción</h3><p>Este módulo estará disponible pronto.</p></div>`;
+        content.innerHTML = `<div class="empty-state"><div class="empty-icon">${Icons.warning}</div><h3>Módulo en construcción</h3><p>Este módulo estará disponible pronto.</p></div>`;
       }
     }, 80);
   },

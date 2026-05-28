@@ -23,12 +23,12 @@ const Attendance = {
     container.innerHTML = `
       <div class="animate-fadeIn">
         <div class="section-header">
-          <h2><span class="section-icon">✅</span> Control de Asistencia</h2>
+          <h2><span class="section-icon">${Icons.check}</span> Control de Asistencia</h2>
         </div>
         <div class="tabs">
-          <button class="tab-btn ${this.activeTab==='pasar'?'active':''}" data-tab="pasar">📋 Pasar Lista</button>
-          <button class="tab-btn ${this.activeTab==='reporte'?'active':''}" data-tab="reporte">📊 Reportes</button>
-          <button class="tab-btn ${this.activeTab==='calendario'?'active':''}" data-tab="calendario">📅 Calendario</button>
+          <button class="tab-btn ${this.activeTab==='pasar'?'active':''}" data-tab="pasar">${Icons.clipboard} Pasar Lista</button>
+          <button class="tab-btn ${this.activeTab==='reporte'?'active':''}" data-tab="reporte">${Icons.chart} Reportes</button>
+          <button class="tab-btn ${this.activeTab==='calendario'?'active':''}" data-tab="calendario">${Icons.calendar} Calendario</button>
         </div>
 
         <!-- Selector -->
@@ -53,7 +53,7 @@ const Attendance = {
                 <label>Fecha</label>
                 <input type="date" class="form-control" id="att-fecha" value="${this.selectedFecha||Utils.hoy()}">
               </div>
-              <button class="btn btn-primary" id="btn-cargar-asist">📋 Cargar Lista</button>
+              <button class="btn btn-primary" id="btn-cargar-asist">${Icons.clipboard} Cargar Lista</button>
             </div>
           </div>
         </div>
@@ -101,7 +101,7 @@ const Attendance = {
 
   renderPasarLista(content) {
     if (!this.selectedGrupo || !this.selectedMateria) {
-      content.innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div><h3>Selecciona grupo y materia</h3><p>Usa el selector de arriba para cargar la lista</p></div>';
+      content.innerHTML = '<div class="empty-state"><div class="empty-icon">${Icons.clipboard}</div><h3>Selecciona grupo y materia</h3><p>Usa el selector de arriba para cargar la lista</p></div>';
       return;
     }
     const estudiantes = DB.getEstudiantesByGrupo(this.selectedGrupo);
@@ -124,30 +124,30 @@ const Attendance = {
       <div class="animate-fadeIn">
         <!-- Stats rápidas -->
         <div class="attendance-stats-row" style="margin-bottom:20px">
-          <div class="att-stat"><div class="att-num" style="color:var(--success)">${presente}</div><div class="att-label">✅ Presentes</div></div>
-          <div class="att-stat"><div class="att-num" style="color:var(--danger)">${ausente}</div><div class="att-label">❌ Ausentes</div></div>
-          <div class="att-stat"><div class="att-num" style="color:var(--warning)">${tardanza}</div><div class="att-label">⏰ Tardanzas</div></div>
-          <div class="att-stat"><div class="att-num" style="color:var(--info)">${justificado}</div><div class="att-label">📄 Justificados</div></div>
+          <div class="att-stat"><div class="att-num" style="color:var(--success)">${presente}</div><div class="att-label">${Icons.check} Presentes</div></div>
+          <div class="att-stat"><div class="att-num" style="color:var(--danger)">${ausente}</div><div class="att-label">${Icons.error} Ausentes</div></div>
+          <div class="att-stat"><div class="att-num" style="color:var(--warning)">${tardanza}</div><div class="att-label">${Icons.clock} Tardanzas</div></div>
+          <div class="att-stat"><div class="att-num" style="color:var(--info)">${justificado}</div><div class="att-label">${Icons.file} Justificados</div></div>
         </div>
 
         <div class="card">
           <div class="card-header">
             <div>
-              <h3>📋 Lista: ${grupo?.nombre} · ${materia?.nombre}</h3>
+              <h3>${Icons.clipboard} Lista: ${grupo?.nombre} · ${materia?.nombre}</h3>
               <div style="font-size:12px;color:var(--text-muted);margin-top:2px">${Utils.formatFecha(fecha)} · ${estudiantes.length} estudiantes</div>
             </div>
             <div style="display:flex;gap:8px">
-              <button class="btn btn-outline btn-sm" id="btn-todos-presente">✅ Todos Presentes</button>
-              <button class="btn btn-accent btn-sm" id="btn-guardar-asist">💾 Guardar Asistencia</button>
+              <button class="btn btn-outline btn-sm" id="btn-todos-presente">${Icons.check} Todos Presentes</button>
+              <button class="btn btn-accent btn-sm" id="btn-guardar-asist">${Icons.save} Guardar Asistencia</button>
             </div>
           </div>
           <table>
             <thead><tr>
               <th>#</th><th>Estudiante</th>
-              <th style="text-align:center">✅ Presente</th>
-              <th style="text-align:center">❌ Ausente</th>
-              <th style="text-align:center">⏰ Tardanza</th>
-              <th style="text-align:center">📄 Justificado</th>
+              <th style="text-align:center">${Icons.check} Presente</th>
+              <th style="text-align:center">${Icons.error} Ausente</th>
+              <th style="text-align:center">${Icons.clock} Tardanza</th>
+              <th style="text-align:center">${Icons.file} Justificado</th>
               <th>Observación</th>
             </tr></thead>
             <tbody>
@@ -243,17 +243,17 @@ const Attendance = {
     content.innerHTML = `
       <div class="animate-fadeIn">
         <div class="section-header" style="margin-bottom:20px">
-          <h3>📊 Reporte de Asistencia ${grupo ? `· ${grupo.nombre}` : ''} ${materia ? `· ${materia.nombre}` : ''}</h3>
-          <button class="btn btn-outline btn-sm" id="btn-export-asist">📤 Exportar</button>
+          <h3>${Icons.chart} Reporte de Asistencia ${grupo ? `· ${grupo.nombre}` : ''} ${materia ? `· ${materia.nombre}` : ''}</h3>
+          <button class="btn btn-outline btn-sm" id="btn-export-asist">${Icons.export} Exportar</button>
         </div>
         <div class="table-wrapper">
           <table>
             <thead><tr>
               <th>Estudiante</th><th>Grado/Grupo</th>
-              <th style="text-align:center">✅ Presentes</th>
-              <th style="text-align:center">❌ Ausentes</th>
-              <th style="text-align:center">⏰ Tardanzas</th>
-              <th style="text-align:center">📄 Justificados</th>
+              <th style="text-align:center">${Icons.check} Presentes</th>
+              <th style="text-align:center">${Icons.error} Ausentes</th>
+              <th style="text-align:center">${Icons.clock} Tardanzas</th>
+              <th style="text-align:center">${Icons.file} Justificados</th>
               <th style="text-align:center">% Asistencia</th>
               <th>Estado</th>
             </tr></thead>
@@ -320,7 +320,7 @@ const Attendance = {
   renderCalendario(content) {
     const estudiantes = this.selectedGrupo ? DB.getEstudiantesByGrupo(this.selectedGrupo) : DB.getEstudiantes().filter(e=>e.activo).slice(0, 10);
     if (!estudiantes.length) {
-      content.innerHTML = '<div class="empty-state"><div class="empty-icon">📅</div><h3>Selecciona un grupo</h3><p>Carga un grupo para ver el calendario</p></div>';
+      content.innerHTML = '<div class="empty-state"><div class="empty-icon">${Icons.calendar}</div><h3>Selecciona un grupo</h3><p>Carga un grupo para ver el calendario</p></div>';
       return;
     }
 
@@ -336,7 +336,7 @@ const Attendance = {
     content.innerHTML = `
       <div class="card animate-fadeIn">
         <div class="card-header">
-          <h3>📅 Calendario de Asistencia</h3>
+          <h3>${Icons.calendar} Calendario de Asistencia</h3>
           <div style="display:flex;gap:12px;font-size:12px;align-items:center">
             ${['presente','ausente','tardanza','justificado'].map(s => {
               const cfg = Utils.estadoAsistenciaConfig(s);

@@ -9,14 +9,14 @@ const Settings = {
     container.innerHTML = `
       <div class="animate-fadeIn">
         <div class="section-header">
-          <h2><span class="section-icon">⚙️</span> Configuración del Sistema</h2>
+          <h2><span class="section-icon">${Icons.settings}</span> Configuración del Sistema</h2>
         </div>
         
         <div class="tabs">
-          <button class="tab-btn ${this.activeTab === 'institucion' ? 'active' : ''}" data-tab="institucion">🏢 Institución</button>
-          <button class="tab-btn ${this.activeTab === 'escala' ? 'active' : ''}" data-tab="escala">📊 Escala y Evaluación</button>
-          <button class="tab-btn ${this.activeTab === 'usuarios' ? 'active' : ''}" data-tab="usuarios">👥 Gestión de Usuarios</button>
-          <button class="tab-btn ${this.activeTab === 'sistema' ? 'active' : ''}" data-tab="sistema">⚙️ Sistema y Plantilla</button>
+          <button class="tab-btn ${this.activeTab === 'institucion' ? 'active' : ''}" data-tab="institucion">${Icons.school} Institución</button>
+          <button class="tab-btn ${this.activeTab === 'escala' ? 'active' : ''}" data-tab="escala">${Icons.chart} Escala y Evaluación</button>
+          <button class="tab-btn ${this.activeTab === 'usuarios' ? 'active' : ''}" data-tab="usuarios">${Icons.users} Gestión de Usuarios</button>
+          <button class="tab-btn ${this.activeTab === 'sistema' ? 'active' : ''}" data-tab="sistema">${Icons.settings} Sistema y Plantilla</button>
         </div>
         
         <div id="settings-content" class="animate-fadeIn"></div>
@@ -60,7 +60,7 @@ const Settings = {
     container.innerHTML = `
       <div class="card animate-fadeIn">
         <div class="card-header">
-          <h3>🏢 Información de la Institución Educativa</h3>
+          <h3>${Icons.school} Información de la Institución Educativa</h3>
         </div>
         <div class="card-body">
           <form id="form-settings-institucion">
@@ -98,7 +98,7 @@ const Settings = {
             </div>
 
             <div style="margin-top: 24px; display: flex; justify-content: flex-end;">
-              <button type="submit" class="btn btn-primary">💾 Guardar Cambios</button>
+              <button type="submit" class="btn btn-primary">${Icons.save} Guardar Cambios</button>
             </div>
           </form>
         </div>
@@ -128,7 +128,7 @@ const Settings = {
         <!-- Escala Numérica -->
         <div class="card animate-fadeIn">
           <div class="card-header">
-            <h3>📈 Escala de Calificaciones</h3>
+            <h3>${Icons.trendingUp} Escala de Calificaciones</h3>
           </div>
           <div class="card-body">
             <form id="form-settings-escala">
@@ -145,7 +145,7 @@ const Settings = {
                 <input type="number" step="0.1" class="form-control" name="minAprobatorio" value="${escala.minAprobatorio}" required min="0">
               </div>
               
-              <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center;">💾 Guardar Escala</button>
+              <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center;">${Icons.save} Guardar Escala</button>
             </form>
           </div>
         </div>
@@ -153,7 +153,7 @@ const Settings = {
         <!-- Tipos de Actividad y Porcentajes -->
         <div class="card animate-fadeIn">
           <div class="card-header">
-            <h3>📊 Tipos de Actividades y Ponderación</h3>
+            <h3>${Icons.chart} Tipos de Actividades y Ponderación</h3>
             <button class="btn btn-accent btn-sm" id="btn-add-actividad-tipo">+ Nuevo Tipo</button>
           </div>
           <div class="card-body" style="padding:0;">
@@ -179,7 +179,7 @@ const Settings = {
                       <input type="color" class="val-color" data-id="${t.id}" value="${t.color}" style="border: none; background: none; width: 32px; height: 32px; cursor: pointer;">
                     </td>
                     <td style="text-align: center;">
-                      <button class="btn btn-danger btn-sm btn-icon" onclick="Settings.deleteTipoActividad('${t.id}')">🗑️</button>
+                      <button class="btn btn-danger btn-sm btn-icon" onclick="Settings.deleteTipoActividad('${t.id}')">${Icons.trash}</button>
                     </td>
                   </tr>
                 `).join('')}
@@ -192,9 +192,9 @@ const Settings = {
                 <span id="ponderacion-total-badge" class="badge">0%</span>
               </div>
               <div id="ponderacion-error-msg" class="alert alert-danger" style="display: none; font-size: 12px; margin: 0; padding: 8px 12px;">
-                ⚠️ La ponderación total debe sumar exactamente 100%.
+                ${Icons.warning} La ponderación total debe sumar exactamente 100%.
               </div>
-              <button class="btn btn-primary" id="btn-save-ponderaciones" style="width: 100%; justify-content: center;">💾 Guardar Ponderaciones</button>
+              <button class="btn btn-primary" id="btn-save-ponderaciones" style="width: 100%; justify-content: center;">${Icons.save} Guardar Ponderaciones</button>
             </div>
           </div>
         </div>
@@ -299,7 +299,7 @@ const Settings = {
       <div class="modal-content modal-sm">
         <div class="modal-header">
           <h3>Nuevo Tipo de Actividad</h3>
-          <button class="modal-close">✕</button>
+          <button class="modal-close">${Icons.close}</button>
         </div>
         <form id="form-new-tipo-act">
           <div class="modal-body">
@@ -314,7 +314,7 @@ const Settings = {
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-outline modal-close">Cancelar</button>
-            <button type="submit" class="btn btn-primary">➕ Agregar</button>
+            <button type="submit" class="btn btn-primary">${Icons.plus} Agregar</button>
           </div>
         </form>
       </div>`;
@@ -367,7 +367,7 @@ const Settings = {
       <div class="table-wrapper animate-fadeIn">
         <div class="table-toolbar">
           <div class="table-search">
-            <span class="search-icon">🔍</span>
+            <span class="search-icon">${Icons.search}</span>
             <input type="text" placeholder="Buscar usuario..." id="search-usuarios">
           </div>
           <div class="table-filters">
@@ -438,8 +438,8 @@ const Settings = {
             <td><span class="badge ${badgeClass}">${badgeText}</span></td>
             <td>${Utils.formatFecha(u.creado)}</td>
             <td class="td-actions" style="justify-content: center;">
-              <button class="btn btn-outline btn-sm" onclick="Settings.openEditUsuarioModal('${u.id}')">✏️</button>
-              ${u.id !== session.userId ? `<button class="btn btn-danger btn-sm" onclick="Settings.deleteUsuario('${u.id}')">🗑️</button>` : ''}
+              <button class="btn btn-outline btn-sm" onclick="Settings.openEditUsuarioModal('${u.id}')">${Icons.edit}</button>
+              ${u.id !== session.userId ? `<button class="btn btn-danger btn-sm" onclick="Settings.deleteUsuario('${u.id}')">${Icons.trash}</button>` : ''}
             </td>
           </tr>`;
       }).join('') || '<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--text-muted)">Sin usuarios</td></tr>';
@@ -478,7 +478,7 @@ const Settings = {
       <div class="modal-content">
         <div class="modal-header">
           <h3>Crear Nuevo Usuario</h3>
-          <button class="modal-close">✕</button>
+          <button class="modal-close">${Icons.close}</button>
         </div>
         <form id="form-new-usuario">
           <div class="modal-body">
@@ -530,7 +530,7 @@ const Settings = {
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-outline modal-close">Cancelar</button>
-            <button type="submit" class="btn btn-primary">💾 Guardar Usuario</button>
+            <button type="submit" class="btn btn-primary">${Icons.save} Guardar Usuario</button>
           </div>
         </form>
       </div>`;
@@ -596,7 +596,7 @@ const Settings = {
       <div class="modal-content">
         <div class="modal-header">
           <h3>Editar Usuario</h3>
-          <button class="modal-close">✕</button>
+          <button class="modal-close">${Icons.close}</button>
         </div>
         <form id="form-edit-usuario">
           <div class="modal-body">
@@ -648,7 +648,7 @@ const Settings = {
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-outline modal-close">Cancelar</button>
-            <button type="submit" class="btn btn-primary">💾 Guardar Cambios</button>
+            <button type="submit" class="btn btn-primary">${Icons.save} Guardar Cambios</button>
           </div>
         </form>
       </div>`;
@@ -718,7 +718,7 @@ const Settings = {
         <!-- Plantilla Boletín -->
         <div class="card animate-fadeIn col-full" style="grid-column: span 2;">
           <div class="card-header">
-            <h3>📄 Configuración de la Plantilla de Boletín de Notas</h3>
+            <h3>${Icons.file} Configuración de la Plantilla de Boletín de Notas</h3>
           </div>
           <div class="card-body">
             <form id="form-settings-boletin">
@@ -743,7 +743,7 @@ const Settings = {
                 </div>
               </div>
               
-              <button type="submit" class="btn btn-primary">💾 Guardar Configuración de Boletín</button>
+              <button type="submit" class="btn btn-primary">${Icons.save} Guardar Configuración de Boletín</button>
             </form>
           </div>
         </div>
@@ -751,7 +751,7 @@ const Settings = {
         <!-- Mantenimiento de Datos -->
         <div class="card animate-fadeIn col-full" style="grid-column: span 2; border: 1px solid rgba(231, 76, 60, 0.2);">
           <div class="card-header" style="background: rgba(231, 76, 60, 0.05);">
-            <h3 class="text-danger">⚠️ Zona de Peligro / Mantenimiento</h3>
+            <h3 class="text-danger">${Icons.warning} Zona de Peligro / Mantenimiento</h3>
           </div>
           <div class="card-body" style="display: flex; flex-direction: column; gap: 16px;">
             <p style="font-size: 13px; color: var(--text-secondary); margin: 0;">
@@ -763,7 +763,7 @@ const Settings = {
                 <h4 style="margin-bottom: 4px;">Restablecer Datos de Demostración</h4>
                 <p style="font-size: 12px; color: var(--text-muted); margin: 0;">Restaura la base de datos de localStorage con toda la información mock/demo inicial.</p>
               </div>
-              <button class="btn btn-danger" id="btn-danger-reset">🔄 Restablecer BD</button>
+              <button class="btn btn-danger" id="btn-danger-reset">${Icons.refresh} Restablecer BD</button>
             </div>
           </div>
         </div>

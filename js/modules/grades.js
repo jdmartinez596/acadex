@@ -27,12 +27,12 @@ const Grades = {
     container.innerHTML = `
       <div class="animate-fadeIn">
         <div class="section-header">
-          <h2><span class="section-icon">📝</span> Gestión de Notas</h2>
+          <h2><span class="section-icon">${Icons.fileText}</span> Gestión de Notas</h2>
         </div>
         <div class="tabs">
-          <button class="tab-btn ${this.activeTab==='registro'?'active':''}" data-tab="registro">📝 Registro de Notas</button>
-          <button class="tab-btn ${this.activeTab==='actividades'?'active':''}" data-tab="actividades">📋 Actividades</button>
-          <button class="tab-btn ${this.activeTab==='estadisticas'?'active':''}" data-tab="estadisticas">📊 Estadísticas</button>
+          <button class="tab-btn ${this.activeTab==='registro'?'active':''}" data-tab="registro">${Icons.fileText} Registro de Notas</button>
+          <button class="tab-btn ${this.activeTab==='actividades'?'active':''}" data-tab="actividades">${Icons.clipboard} Actividades</button>
+          <button class="tab-btn ${this.activeTab==='estadisticas'?'active':''}" data-tab="estadisticas">${Icons.chart} Estadísticas</button>
         </div>
 
         <!-- Selector de contexto -->
@@ -60,7 +60,7 @@ const Grades = {
                   ${grupos.map(g=>`<option value="${g.id}" ${g.id===this.selectedGrupo?'selected':''}>${g.nombre} (${DB.getGrado(g.gradoId)?.nombre||''})</option>`).join('')}
                 </select>
               </div>
-              <button class="btn btn-primary" id="btn-cargar-notas">📋 Cargar Lista</button>
+              <button class="btn btn-primary" id="btn-cargar-notas">${Icons.clipboard} Cargar Lista</button>
             </div>
           </div>
         </div>
@@ -110,7 +110,7 @@ const Grades = {
     const user = DB.getUsuario(session.userId);
     const estId = user?.estudianteId || (session.rol === 'estudiante' ? session.userId : null);
     if (!estId) {
-      container.innerHTML = '<div class="empty-state"><div class="empty-icon">📝</div><h3>Sin datos</h3><p>No se encontró información de estudiante</p></div>';
+      container.innerHTML = '<div class="empty-state"><div class="empty-icon">${Icons.fileText}</div><h3>Sin datos</h3><p>No se encontró información de estudiante</p></div>';
       return;
     }
     const est = DB.getEstudiante(estId);
@@ -119,7 +119,7 @@ const Grades = {
 
     container.innerHTML = `
       <div class="animate-fadeIn">
-        <div class="section-header"><h2><span class="section-icon">📝</span> Mis Notas</h2></div>
+        <div class="section-header"><h2><span class="section-icon">${Icons.fileText}</span> Mis Notas</h2></div>
         <table><thead><tr>
           <th>Materia</th>${periodos.map(p=>`<th>${p.nombre}</th>`).join('')}<th>Promedio Final</th><th>Estado</th>
         </tr></thead><tbody>
@@ -131,7 +131,7 @@ const Grades = {
             <td><div style="display:flex;align-items:center;gap:8px"><div style="width:10px;height:10px;border-radius:50%;background:${m.color}"></div><strong>${m.nombre}</strong></div></td>
             ${proms.map(p=>`<td style="font-weight:700;color:${p!==null?Utils.colorNota(p,config.escala.minAprobatorio):'var(--text-muted)'}">${p!==null?Utils.formatNota(p):'—'}</td>`).join('')}
             <td style="font-size:18px;font-weight:800;color:${pf!==null?Utils.colorNota(pf,config.escala.minAprobatorio):'var(--text-muted)'}">${pf!==null?Utils.formatNota(pf):'—'}</td>
-            <td>${pf!==null?(aprobado?'<span class="badge badge-success">✅ Aprobado</span>':'<span class="badge badge-danger">❌ Reprobado</span>'):'<span class="badge badge-neutral">Sin notas</span>'}</td>
+            <td>${pf!==null?(aprobado?'<span class="badge badge-success">${Icons.check} Aprobado</span>':'<span class="badge badge-danger">${Icons.error} Reprobado</span>'):'<span class="badge badge-neutral">Sin notas</span>'}</td>
           </tr>`;
         }).join('')}
         </tbody></table>
@@ -148,7 +148,7 @@ const Grades = {
     const tiposActividad = config.tiposActividad;
 
     if (!estudiantes.length) {
-      content.innerHTML = '<div class="empty-state"><div class="empty-icon">👥</div><h3>Sin estudiantes</h3><p>El grupo seleccionado no tiene estudiantes registrados</p></div>';
+      content.innerHTML = '<div class="empty-state"><div class="empty-icon">${Icons.users}</div><h3>Sin estudiantes</h3><p>El grupo seleccionado no tiene estudiantes registrados</p></div>';
       return;
     }
 
@@ -168,11 +168,11 @@ const Grades = {
     content.innerHTML = `
       <div class="card animate-fadeIn">
         <div class="card-header">
-          <h3>📝 ${materia?.nombre||'Materia'} · ${periodo?.nombre||'Período'}</h3>
+          <h3>${Icons.fileText} ${materia?.nombre||'Materia'} · ${periodo?.nombre||'Período'}</h3>
           <div style="display:flex;gap:8px">
             <button class="btn btn-outline btn-sm" id="btn-add-nota">+ Agregar Actividad</button>
-            <button class="btn btn-accent btn-sm" id="btn-save-notas">💾 Guardar Cambios</button>
-            <button class="btn btn-outline btn-sm" id="btn-export-notas">📤 Exportar</button>
+            <button class="btn btn-accent btn-sm" id="btn-save-notas">${Icons.save} Guardar Cambios</button>
+            <button class="btn btn-outline btn-sm" id="btn-export-notas">${Icons.export} Exportar</button>
           </div>
         </div>
         <!-- Config porcentajes -->
@@ -222,7 +222,7 @@ const Grades = {
                     <span class="prom-cell" style="font-size:18px;font-weight:800;color:${prom!==null?Utils.colorNota(prom,config.escala.minAprobatorio):'var(--text-muted)'}">${prom!==null?Utils.formatNota(prom):'—'}</span>
                   </td>
                   <td style="text-align:center">
-                    <span class="estado-cell">${prom!==null?(aprobado?'<span class="badge badge-success">✅</span>':'<span class="badge badge-danger">❌</span>'):'<span class="badge badge-neutral">—</span>'}</span>
+                    <span class="estado-cell">${prom!==null?(aprobado?'<span class="badge badge-success">${Icons.check}</span>':'<span class="badge badge-danger">${Icons.error}</span>'):'<span class="badge badge-neutral">—</span>'}</span>
                   </td>
                 </tr>`;
               }).join('')}
@@ -230,7 +230,7 @@ const Grades = {
             <!-- Resumen -->
             <tfoot>
               <tr class="grade-summary-row">
-                <td><strong>📊 Promedio del Grupo</strong></td>
+                <td><strong>${Icons.chart} Promedio del Grupo</strong></td>
                 ${tiposActividad.map(t => {
                   const vals = estudiantes.map(e => { const n = notasData[e.id][t.id]; return n ? n.valor : null; }).filter(v=>v!==null);
                   const avg = vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : null;
@@ -286,7 +286,7 @@ const Grades = {
     row.querySelector('.prom-cell').textContent = prom !== null ? Utils.formatNota(prom) : '—';
     row.querySelector('.prom-cell').style.color = prom !== null ? Utils.colorNota(prom, config.escala.minAprobatorio) : 'var(--text-muted)';
     const aprobado = prom !== null && prom >= config.escala.minAprobatorio;
-    row.querySelector('.estado-cell').innerHTML = prom !== null ? (aprobado ? '<span class="badge badge-success">✅</span>' : '<span class="badge badge-danger">❌</span>') : '<span class="badge badge-neutral">—</span>';
+    row.querySelector('.estado-cell').innerHTML = prom !== null ? (aprobado ? '<span class="badge badge-success">${Icons.check}</span>' : '<span class="badge badge-danger">${Icons.error}</span>') : '<span class="badge badge-neutral">—</span>';
   },
 
   guardarNotas(config) {
@@ -355,7 +355,7 @@ const Grades = {
         </div>
         <div class="modal-footer">
           <button class="btn btn-outline modal-close">Cancelar</button>
-          <button class="btn btn-primary" id="save-nota-btn">💾 Guardar</button>
+          <button class="btn btn-primary" id="save-nota-btn">${Icons.save} Guardar</button>
         </div>
       </div>`;
     document.body.appendChild(modal);
@@ -400,7 +400,7 @@ const Grades = {
             <td><strong style="color:${Utils.colorNota(n.valor,config.escala.minAprobatorio)}">${Utils.formatNota(n.valor)}</strong></td>
             <td style="font-size:12px;color:var(--text-muted)">${n.descripcion||'—'}</td>
             <td>${Utils.formatFechaCorta(n.fecha)}</td>
-            <td><button class="btn btn-danger btn-sm" onclick="Grades.deleteNota('${n.id}')">🗑️</button></td>
+            <td><button class="btn btn-danger btn-sm" onclick="Grades.deleteNota('${n.id}')">${Icons.trash}</button></td>
           </tr>`;
         }).join('')}</tbody></table>
       </div>`;
@@ -420,10 +420,10 @@ const Grades = {
     const materias = DB.getMaterias().slice(0, 6);
     const config = DB.getConfig();
     content.innerHTML = `<div class="grid-2 animate-fadeIn" style="gap:20px">
-      <div class="chart-wrapper"><div class="chart-header"><h3>📊 Promedio por Materia</h3></div>
+      <div class="chart-wrapper"><div class="chart-header"><h3>${Icons.chart} Promedio por Materia</h3></div>
         <div class="chart-body"><canvas id="chart-notas-materias"></canvas></div>
       </div>
-      <div class="chart-wrapper"><div class="chart-header"><h3>📈 Distribución de Notas</h3></div>
+      <div class="chart-wrapper"><div class="chart-header"><h3>${Icons.trendingUp} Distribución de Notas</h3></div>
         <div class="chart-body"><canvas id="chart-dist-notas"></canvas></div>
       </div>
     </div>`;
