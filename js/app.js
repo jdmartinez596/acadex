@@ -105,6 +105,22 @@ const App = {
     document.getElementById('header-user-avatar').textContent = Utils.avatarInitials(session.nombre, session.apellido);
     document.getElementById('header-user-name').textContent = session.nombre;
 
+    // Institution switcher for super_admin
+    const instSwitcher = document.getElementById('header-inst-switcher');
+    const instSelect = document.getElementById('header-inst-select');
+    if (session.rol === 'super_admin' && instSwitcher && instSelect) {
+      instSwitcher.style.display = 'block';
+      const insts = DB.getInstituciones().filter(i => i.activo !== false);
+      instSelect.innerHTML = '<option value="">🌐 Todas</option>' +
+        insts.map(i => `<option value="${i.id}">${i.nombre}</option>`).join('');
+      if (session.instVista) instSelect.value = session.instVista;
+      instSelect.addEventListener('change', () => {
+        session.instVista = instSelect.value || null;
+        sessionStorage.setItem(Auth.SESSION_KEY, JSON.stringify(session));
+        App.refresh();
+      });
+    }
+
     document.getElementById('logout-btn').addEventListener('click', async () => {
       const ok = await Utils.confirm('¿Deseas cerrar sesión?', 'Cerrar sesión');
       if (ok) Auth.logout();

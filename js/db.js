@@ -521,6 +521,61 @@ const DB = {
     this._persistLocal();
   },
 
+  // ---- Sincronización Forzada ----
+  async syncAll(onProgress) {
+    const tables = ['instituciones','usuarios','periodos','grados','grupos','materias','estudiantes','notas','asistencia','actividades','notificaciones'];
+    const total = tables.length;
+    let done = 0;
+    for (const t of tables) {
+      try {
+        const key = t === 'config' ? 'config' : t;
+        const { data, error } = await supabase.from(t).select('*');
+        if (error) throw error;
+        if (t !== 'config') {
+          const mapper = t === 'estudiantes' ? r => this._mapEstudiante(r)
+                       : t === 'grupos' ? r => this._mapGrupo(r)
+                       : r => this._mapRow(r);
+          const supabaseItems = (data || []).map(mapper);
+          const localItems = this._data[key] || [];
+          const supabaseIds = new Set(supabaseItems.map(i => i.id));
+          const localIds = new Set(localItems.map(i => i.id));
+          const missingInLocal = supabaseItems.filter(i => !localIds.has(i.id));
+          const missingInSupabase = localItems.filter(i => !supabaseIds.has(i.id));
+          // Merge: Supabase items + local items not in Supabase
+          this._data[key] = [...supabaseItems, ...missingInSupabase];
+          // Push local-only items to Supabase
+          for (const item of missingInSupabase) {
+            await supabase.from(t).insert(this._snakeObj(item)).catch(() => {});
+          }
+        } else if (data?.[0]) {
+          this._data.config = this._mapConfig(data[0]);
+        }
+      } catch (e) {
+        console.warn(`Sync error for ${t}:`, e);
+      }
+      done++;
+      if (onProgress) onProgress(done, total);
+    }
+    this._persistLocal();
+  },
+
+  async backfillInstId() {
+    const session = Auth.getSession();
+    if (!session) return;
+    const instId = session.institucionId || 'inst_default';
+    const tables = ['usuarios','periodos','grados','grupos','materias','estudiantes','notas','asistencia','actividades','notificaciones'];
+    for (const t of tables) {
+      const items = this._data[t] || [];
+      for (const item of items) {
+        if (!item.institucionId) {
+          item.institucionId = instId;
+          await supabase.from(t).update({ institucion_id: instId }).eq('id', item.id).catch(() => {});
+        }
+      }
+    }
+    this._persistLocal();
+  },
+
   // ---- Stats para Dashboard ----
   getStats() {
     const estudiantes = this.getEstudiantes().filter(e => e.activo);
