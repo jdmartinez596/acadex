@@ -28,7 +28,7 @@ const supabase = (() => {
   }
 
   async function refreshToken(rt) {
-    const res = await fetch(`${BASE}/auth/v1/token?grant_type=refresh_token`, {
+    const res = await fetch_(`${BASE}/auth/v1/token?grant_type=refresh_token`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', apikey: ANON },
       body: JSON.stringify({ refresh_token: rt })
@@ -44,6 +44,17 @@ const supabase = (() => {
     const h = { apikey: ANON, 'Content-Type': 'application/json' };
     if (token?.access_token) h['Authorization'] = 'Bearer ' + token.access_token;
     return h;
+  }
+
+  async function fetch_(url, init, timeout = 15000) {
+    const ctrl = new AbortController();
+    const id = setTimeout(() => ctrl.abort(), timeout);
+    try {
+      const res = await fetch_(url, { ...init, signal: ctrl.signal });
+      return res;
+    } finally {
+      clearTimeout(id);
+    }
   }
 
   // ---- Auth state listeners ----
@@ -72,7 +83,7 @@ const supabase = (() => {
       },
 
       async signInWithPassword({ email, password }) {
-        const res = await fetch(`${BASE}/auth/v1/token?grant_type=password`, {
+        const res = await fetch_(`${BASE}/auth/v1/token?grant_type=password`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', apikey: ANON },
           body: JSON.stringify({ email, password })
@@ -88,7 +99,7 @@ const supabase = (() => {
       async signOut() {
         const s = loadSession();
         if (s?.access_token) {
-          await fetch(`${BASE}/auth/v1/logout`, {
+          await fetch_(`${BASE}/auth/v1/logout`, {
             method: 'POST', headers: headers(s)
           }).catch(() => {});
         }
@@ -135,7 +146,7 @@ const supabase = (() => {
               mopts.filters.forEach(f => params.set(f.col, f.op + '.' + f.val));
               const qs = params.toString();
               const url = `${BASE}/rest/v1/${table}${qs ? '?' + qs : ''}`;
-              const res = await fetch(url, { method, headers: headers(token), body: data ? JSON.stringify(data) : null });
+              const res = await fetch_(url, { method, headers: headers(token), body: data ? JSON.stringify(data) : null });
               if (!res.ok) { const e = await res.json().catch(() => ({ message: res.statusText })); return { data: null, error: e }; }
               if (method === 'DELETE' || res.status === 204) return { data: null, error: null };
               return { data: await res.json(), error: null };
@@ -169,7 +180,7 @@ const supabase = (() => {
           const promise = (async () => {
             const token = await ensureToken();
             const url = buildUrl(table, opts);
-            const res = await fetch(url, { headers: headers(token) });
+            const res = await fetch_(url, { headers: headers(token) });
             if (!res.ok) {
               const e = await res.json().catch(() => ({ message: res.statusText }));
               return { data: null, error: e };
@@ -193,7 +204,7 @@ const supabase = (() => {
             const token = await ensureToken();
             const h = { apikey: ANON };
             if (token?.access_token) h['Authorization'] = 'Bearer ' + token.access_token;
-            const res = await fetch(`${BASE}/storage/v1/object/${bucket}/${path}`, {
+            const res = await fetch_(`${BASE}/storage/v1/object/${bucket}/${path}`, {
               method: 'POST', headers: h, body: file
             });
             if (!res.ok) { const e = await res.json().catch(() => ({ message: res.statusText })); return { data: null, error: e }; }
@@ -204,7 +215,7 @@ const supabase = (() => {
           },
           async remove(paths) {
             const token = await ensureToken();
-            const res = await fetch(`${BASE}/storage/v1/object/${bucket}`, {
+            const res = await fetch_(`${BASE}/storage/v1/object/${bucket}`, {
               method: 'DELETE',
               headers: { ...headers(token), 'Content-Type': 'application/json' },
               body: JSON.stringify({ prefixes: paths })
