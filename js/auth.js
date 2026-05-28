@@ -19,7 +19,7 @@ const Auth = {
   async login(email, password) {
     const { data, error } = await supabase
       .from('usuarios')
-      .select('id, nombre, apellido, email, rol, estudiante_id, institucion_id, password')
+      .select('id, nombre, apellido, email, rol, estudiante_id, password')
       .eq('email', email.trim().toLowerCase())
       .single();
     if (!error && data) {
@@ -52,7 +52,7 @@ const Auth = {
   async loginWithDocumento(documento, password) {
     const { data, error } = await supabase
       .from('usuarios')
-      .select('id, nombre, apellido, email, rol, estudiante_id, institucion_id, password')
+      .select('id, nombre, apellido, email, rol, estudiante_id, password')
       .eq('documento', documento.trim())
       .single();
     if (!error && data) {
