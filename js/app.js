@@ -1,0 +1,270 @@
+// ============================================================
+// ACADEX — Router / App Principal SPA
+// ============================================================
+
+const App = {
+  currentRoute: null,
+
+  routes: {
+    dashboard:    { label: 'Dashboard',          icon: '📊', module: 'Dashboard',   roles: ['admin','docente','estudiante'] },
+    academic:     { label: 'Estructura Académica', icon: '🏫', module: 'Academic',    roles: ['admin','docente'] },
+    students:     { label: 'Estudiantes',          icon: '👥', module: 'Students',    roles: ['admin','docente'] },
+    grades:       { label: 'Notas',                icon: '📝', module: 'Grades',      roles: ['admin','docente','estudiante'] },
+    attendance:   { label: 'Asistencia',           icon: '✅', module: 'Attendance',  roles: ['admin','docente'] },
+    reports:      { label: 'Reportes',             icon: '📊', module: 'Reports',     roles: ['admin','docente','estudiante'] },
+    settings:     { label: 'Configuración',        icon: '⚙️', module: 'Settings',    roles: ['admin'] }
+  },
+
+  navGroups: {
+    admin: [
+      { label: 'Principal',   items: ['dashboard'] },
+      { label: 'Académico',   items: ['academic', 'students', 'grades', 'attendance'] },
+      { label: 'Análisis',    items: ['reports'] },
+      { label: 'Sistema',     items: ['settings'] }
+    ],
+    docente: [
+      { label: 'Principal',   items: ['dashboard'] },
+      { label: 'Mi Trabajo',  items: ['students', 'grades', 'attendance'] },
+      { label: 'Análisis',    items: ['reports'] }
+    ],
+    estudiante: [
+      { label: 'Principal',   items: ['dashboard'] },
+      { label: 'Mi Académico', items: ['grades', 'reports'] }
+    ]
+  },
+
+  init() {
+    DB.init();
+    const session = Auth.getSession();
+    if (!session) return;
+
+    this.buildSidebar(session);
+    this.buildHeader(session);
+    this.setupSidebarToggle();
+    this.setupDarkMode();
+    this.setupNotifications(session);
+    Utils.initModals();
+
+    // Navigate to dashboard
+    const hash = window.location.hash.replace('#', '') || 'dashboard';
+    this.navigate(hash.replace('/', ''));
+
+    window.addEventListener('hashchange', () => {
+      const route = window.location.hash.replace('#', '').replace('/', '') || 'dashboard';
+      this.navigate(route);
+    });
+  },
+
+  buildSidebar(session) {
+    const sidebar = document.getElementById('sidebar');
+    const groups = this.navGroups[session.rol] || this.navGroups.admin;
+    const user = DB.getUsuario(session.userId);
+
+    // User info
+    const color = Utils.colorFromString(session.nombre + session.apellido);
+    document.getElementById('sidebar-user-avatar').style.background = color;
+    document.getElementById('sidebar-user-avatar').textContent = Utils.avatarInitials(session.nombre, session.apellido);
+    document.getElementById('sidebar-user-name').textContent = `${session.nombre} ${session.apellido}`;
+    document.getElementById('sidebar-user-role').textContent = session.rol;
+
+    // Nav
+    const nav = document.getElementById('sidebar-nav');
+    let html = '';
+    groups.forEach(group => {
+      html += `<div class="nav-section">${group.label}</div>`;
+      group.items.forEach(routeKey => {
+        const route = this.routes[routeKey];
+        if (!route) return;
+        html += `<div class="nav-item" data-route="${routeKey}" id="nav-${routeKey}">
+          <span class="nav-icon">${route.icon}</span>
+          <span class="nav-label">${route.label}</span>
+        </div>`;
+      });
+    });
+    nav.innerHTML = html;
+
+    nav.querySelectorAll('.nav-item').forEach(item => {
+      item.addEventListener('click', () => {
+        this.navigate(item.dataset.route);
+        // Close mobile
+        sidebar.classList.remove('mobile-open');
+        document.getElementById('sidebar-overlay').classList.remove('active');
+      });
+    });
+  },
+
+  buildHeader(session) {
+    document.getElementById('header-user-avatar').style.background = Utils.colorFromString(session.nombre + session.apellido);
+    document.getElementById('header-user-avatar').textContent = Utils.avatarInitials(session.nombre, session.apellido);
+    document.getElementById('header-user-name').textContent = session.nombre;
+
+    document.getElementById('logout-btn').addEventListener('click', async () => {
+      const ok = await Utils.confirm('¿Deseas cerrar sesión?', 'Cerrar sesión');
+      if (ok) Auth.logout();
+    });
+
+    // Search - global filter
+    const searchInput = document.getElementById('global-search');
+    if (searchInput) {
+      searchInput.addEventListener('input', Utils.debounce(e => {
+        const q = e.target.value.trim();
+        if (q.length > 1) this.globalSearch(q);
+      }, 300));
+    }
+
+    // Mobile menu
+    document.getElementById('mobile-menu-btn')?.addEventListener('click', () => {
+      document.getElementById('sidebar').classList.toggle('mobile-open');
+      document.getElementById('sidebar-overlay').classList.toggle('active');
+    });
+    document.getElementById('sidebar-overlay')?.addEventListener('click', () => {
+      document.getElementById('sidebar').classList.remove('mobile-open');
+      document.getElementById('sidebar-overlay').classList.remove('active');
+    });
+  },
+
+  setupSidebarToggle() {
+    const sidebar = document.getElementById('sidebar');
+    document.getElementById('sidebar-toggle-btn').addEventListener('click', () => {
+      sidebar.classList.toggle('collapsed');
+      localStorage.setItem('acadex_sidebar_collapsed', sidebar.classList.contains('collapsed'));
+    });
+    if (localStorage.getItem('acadex_sidebar_collapsed') === 'true') {
+      sidebar.classList.add('collapsed');
+    }
+  },
+
+  setupDarkMode() {
+    const config = DB.getConfig();
+    if (config.darkMode) document.documentElement.setAttribute('data-theme','dark');
+    const toggleBtn = document.getElementById('dark-mode-toggle');
+    if (toggleBtn) {
+      if (config.darkMode) toggleBtn.classList.add('on');
+      toggleBtn.addEventListener('click', () => {
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        if (isDark) {
+          document.documentElement.removeAttribute('data-theme');
+          toggleBtn.classList.remove('on');
+          DB.updateConfig('darkMode', false);
+        } else {
+          document.documentElement.setAttribute('data-theme','dark');
+          toggleBtn.classList.add('on');
+          DB.updateConfig('darkMode', true);
+        }
+      });
+    }
+  },
+
+  setupNotifications(session) {
+    this.updateNotifBadge(session);
+    const btn = document.getElementById('notif-btn');
+    const dropdown = document.getElementById('notif-dropdown');
+
+    btn?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isOpen = dropdown.style.display === 'block';
+      dropdown.style.display = isOpen ? 'none' : 'block';
+      if (!isOpen) this.renderNotifications(session);
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!btn?.contains(e.target) && !dropdown?.contains(e.target)) {
+        if (dropdown) dropdown.style.display = 'none';
+      }
+    });
+  },
+
+  renderNotifications(session) {
+    const dropdown = document.getElementById('notif-dropdown');
+    const notifs = DB.getNotificaciones(session.userId).slice(0, 8);
+    const icons = { alerta: '⚠️', asistencia: '📋', sistema: 'ℹ️' };
+    let html = `<div class="notif-header">
+      <span>Notificaciones</span>
+      <a href="#" onclick="DB.marcarTodasLeidas('${session.userId}'); App.updateNotifBadge(Auth.getSession()); return false;" style="font-size:12px;color:var(--primary);">Marcar todas</a>
+    </div>
+    <div class="notif-list">`;
+    if (!notifs.length) html += '<div style="padding:24px;text-align:center;color:var(--text-muted);">Sin notificaciones</div>';
+    notifs.forEach(n => {
+      html += `<div class="notif-item ${n.leida?'':'unread'}" onclick="DB.marcarLeida('${n.id}'); App.updateNotifBadge(Auth.getSession())">
+        <span class="notif-icon">${icons[n.tipo]||'📌'}</span>
+        <div class="notif-text">
+          <div class="notif-msg">${n.mensaje}</div>
+          <div class="notif-time">${Utils.formatFechaCorta(n.fecha)}</div>
+        </div>
+      </div>`;
+    });
+    html += '</div><div class="notif-footer"><a href="#">Ver todas</a></div>';
+    dropdown.innerHTML = html;
+  },
+
+  updateNotifBadge(session) {
+    if (!session) return;
+    const count = DB.getNotificacionesNoLeidas(session.userId).length;
+    const badge = document.getElementById('notif-badge');
+    if (badge) { badge.textContent = count; badge.style.display = count > 0 ? 'flex' : 'none'; }
+  },
+
+  navigate(route) {
+    const session = Auth.getSession();
+    if (!session) return;
+
+    const routeConfig = this.routes[route];
+    if (!routeConfig) { this.navigate('dashboard'); return; }
+    if (!routeConfig.roles.includes(session.rol)) { this.navigate('dashboard'); return; }
+
+    // Update active nav
+    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+    const navEl = document.getElementById(`nav-${route}`);
+    if (navEl) navEl.classList.add('active');
+
+    // Update header title
+    document.getElementById('header-page-title').textContent = routeConfig.label;
+    document.getElementById('header-page-subtitle').textContent = this.getSubtitle(route, session);
+
+    // Update hash
+    window.location.hash = route;
+    this.currentRoute = route;
+
+    // Load module
+    const content = document.getElementById('page-content');
+    content.innerHTML = '<div class="loading-spinner"><div class="spinner"></div></div>';
+    content.style.animation = 'none';
+
+    setTimeout(() => {
+      content.style.animation = '';
+      const mod = window[routeConfig.module];
+      if (mod && mod.render) {
+        mod.render(content, session);
+      } else {
+        content.innerHTML = `<div class="empty-state"><div class="empty-icon">🚧</div><h3>Módulo en construcción</h3><p>Este módulo estará disponible pronto.</p></div>`;
+      }
+    }, 80);
+  },
+
+  getSubtitle(route, session) {
+    const subtitles = {
+      dashboard:  `Panel principal · ${new Date().toLocaleDateString('es-CO', { weekday:'long', day:'numeric', month:'long' })}`,
+      academic:   'Grados, grupos, materias y períodos',
+      students:   'Registro y gestión de estudiantes',
+      grades:     'Ingreso y seguimiento de calificaciones',
+      attendance: 'Control de asistencia diaria',
+      reports:    'Boletines, reportes y estadísticas',
+      settings:   'Configuración del sistema'
+    };
+    return subtitles[route] || '';
+  },
+
+  globalSearch(q) {
+    const estudiantes = DB.getEstudiantes().filter(e => e.activo && 
+      (`${e.nombre} ${e.apellido} ${e.documento}`).toLowerCase().includes(q.toLowerCase()));
+    if (estudiantes.length) {
+      Utils.toast(`${estudiantes.length} estudiante(s) encontrado(s). Ve a Estudiantes.`, 'info');
+    }
+  },
+
+  refresh() {
+    if (this.currentRoute) this.navigate(this.currentRoute);
+  }
+};
+
+window.App = App;

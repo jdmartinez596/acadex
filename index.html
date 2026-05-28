@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Acadex — Sistema de Gestión Académica</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- CSS Stylesheets -->
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/modules.css">
+
+  <!-- External CDNs -->
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- jsPDF and AutoTable -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
+  <!-- SheetJS (xlsx) -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+
+  <!-- ========================================== -->
+  <!-- PANTALLA DE LOGIN -->
+  <!-- ========================================== -->
+  <div id="login-page">
+    <div class="login-blob login-blob-1"></div>
+    <div class="login-blob login-blob-2"></div>
+    
+    <div class="login-card">
+      <div class="login-logo" style="display: flex; flex-direction: column; align-items: center;">
+        <img src="assets/logo.svg" alt="Acadex Logo" class="login-logo-img" style="width: 72px; height: 72px; margin-bottom: 12px; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));">
+        <h1>Acadex</h1>
+        <p>Sistema de Gestión Académica</p>
+      </div>
+
+      <div class="login-roles">
+        <div class="role-btn active" data-rol="admin">
+          <span class="role-icon">⚙️</span>
+          <span>Admin</span>
+        </div>
+        <div class="role-btn" data-rol="docente">
+          <span class="role-icon">👩‍🏫</span>
+          <span>Docente</span>
+        </div>
+        <div class="role-btn" data-rol="estudiante">
+          <span class="role-icon">👨‍🎓</span>
+          <span>Estudiante</span>
+        </div>
+      </div>
+
+      <form id="login-form">
+        <div class="form-group" style="margin-bottom: 16px;">
+          <label class="form-label" for="login-email">Correo Electrónico</label>
+          <input type="email" id="login-email" class="form-control" placeholder="ejemplo@acadex.com" required>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 24px;">
+          <label class="form-label" for="login-password">Contraseña</label>
+          <div style="position: relative;">
+            <input type="password" id="login-password" class="form-control" placeholder="••••••••" required style="padding-right: 40px;">
+            <button type="button" id="toggle-password" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; font-size: 16px; cursor: pointer; padding: 4px;">👁️</button>
+          </div>
+        </div>
+
+        <div id="login-error" class="alert alert-danger animate-fadeIn" style="display: none; margin-bottom: 16px; font-size: 13px;">
+          Credenciales incorrectas
+        </div>
+
+        <button type="submit" id="login-btn" class="btn btn-primary" style="width: 100%; justify-content: center; height: 46px;">
+          Ingresar al Sistema
+        </button>
+      </form>
+
+      <div style="text-align: center; margin-top: 20px;">
+        <a href="#" id="forgot-password-link" style="font-size: 13px; color: var(--primary); font-weight: 500;">¿Olvidaste tu contraseña?</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL DE RECUPERACIÓN -->
+  <!-- ========================================== -->
+  <div class="modal" id="modal-recovery">
+    <div class="modal-overlay"></div>
+    <div class="modal-content modal-sm animate-scaleIn">
+      <div class="modal-header">
+        <h3>Recuperar Contraseña</h3>
+        <button class="modal-close">&times;</button>
+      </div>
+      <form id="recovery-form">
+        <div class="modal-body">
+          <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 16px;">
+            Ingresa tu correo electrónico registrado y te enviaremos las instrucciones para restablecer tu contraseña.
+          </p>
+          <div class="form-group">
+            <label class="form-label" for="recovery-email">Correo Electrónico</label>
+            <input type="email" id="recovery-email" class="form-control" placeholder="usuario@acadex.com" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline modal-close">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Enviar Correo</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- SHELL PRINCIPAL SPA -->
+  <!-- ========================================== -->
+  <div id="app-shell">
+    
+    <!-- Sidebar -->
+    <aside id="sidebar" class="animate-slideLeft">
+      <div class="sidebar-brand" style="display: flex; align-items: center; gap: 8px;">
+        <img src="assets/logo.svg" alt="Acadex Logo" class="brand-logo-img" style="width: 32px; height: 32px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));">
+        <span class="brand-name">Acadex</span>
+        <button id="sidebar-toggle-btn" class="hide-mobile">‹</button>
+      </div>
+
+      <div class="sidebar-profile">
+        <div id="sidebar-user-avatar" class="avatar avatar-lg">AS</div>
+        <div class="profile-info">
+          <h4 id="sidebar-user-name">Admin Sistema</h4>
+          <span id="sidebar-user-role">Administrador</span>
+        </div>
+      </div>
+
+      <nav id="sidebar-nav" class="stagger">
+        <!-- Generado dinámicamente según el rol en app.js -->
+      </nav>
+    </aside>
+
+    <!-- Overlay Sidebar Móvil -->
+    <div id="sidebar-overlay"></div>
+
+    <!-- Main Workspace Container -->
+    <div class="main-workspace">
+      
+      <!-- Sticky Header -->
+      <header id="header">
+        <div class="header-left">
+          <button id="mobile-menu-btn" class="btn btn-ghost">☰</button>
+          <div class="header-title-area">
+            <h1 id="header-page-title">Dashboard</h1>
+            <p id="header-page-subtitle">Cargando...</p>
+          </div>
+        </div>
+
+        <div class="header-right">
+          <!-- Búsqueda global -->
+          <div class="search-bar hide-mobile">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="global-search" placeholder="Buscar estudiante o documento...">
+          </div>
+
+          <!-- Toggle modo oscuro -->
+          <button id="dark-mode-toggle" class="dark-mode-switch" title="Cambiar Tema">
+            <span class="switch-icon">☀️</span>
+            <span class="switch-icon">🌙</span>
+          </button>
+
+          <!-- Notificaciones -->
+          <div style="position: relative;">
+            <button id="notif-btn" class="header-btn" title="Notificaciones">
+              🔔
+              <span id="notif-badge" class="badge-notif">0</span>
+            </button>
+            <div id="notif-dropdown" class="notif-dropdown animate-scaleIn">
+              <!-- Renderizado dinámico en app.js -->
+            </div>
+          </div>
+
+          <!-- Perfil de usuario rápido -->
+          <div class="header-user-profile hide-mobile">
+            <div id="header-user-avatar" class="avatar">US</div>
+            <span id="header-user-name">Usuario</span>
+          </div>
+
+          <!-- Botón de salir -->
+          <button id="logout-btn" class="header-btn text-danger" title="Cerrar Sesión" style="margin-left: 8px;">
+            🚪
+          </button>
+        </div>
+      </header>
+
+      <!-- Contenido Principal Dinámico -->
+      <main id="page-content" class="animate-fadeIn">
+        <!-- Renderizado de componentes según el hash navegable -->
+      </main>
+
+    </div>
+  </div>
+
+  <!-- core scripts -->
+  <script src="js/db.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/auth.js"></script>
+  
+  <!-- modules -->
+  <script src="js/modules/dashboard.js"></script>
+  <script src="js/modules/academic.js"></script>
+  <script src="js/modules/students.js"></script>
+  <script src="js/modules/grades.js"></script>
+  <script src="js/modules/attendance.js"></script>
+  <script src="js/modules/reports.js"></script>
+  <script src="js/modules/settings.js"></script>
+
+  <!-- app router -->
+  <script src="js/app.js"></script>
+
+  <!-- Init trigger -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      initLogin();
+    });
+  </script>
+</body>
+</html>
