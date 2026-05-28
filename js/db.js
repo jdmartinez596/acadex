@@ -236,6 +236,20 @@ const DB = {
     const snake = this._snakeObj(e);
     if (typeof e.acudiente === 'object') snake.acudiente = JSON.stringify(snake.acudiente);
     await supabase.from('estudiantes').insert(snake);
+    // Crear usuario automáticamente
+    const usuario = {
+      id: 'u_' + e.id,
+      nombre: e.nombre,
+      apellido: e.apellido,
+      email: e.email || `${e.documento}@estudiante.acadex.app`,
+      documento: e.documento,
+      password: e.documento,
+      rol: 'estudiante',
+      estudiante_id: e.id,
+      activo: true
+    };
+    this._data.usuarios.push(usuario);
+    await supabase.from('usuarios').insert(this._snakeObj(usuario));
     return e;
   },
   async updateEstudiante(id, data) {
@@ -244,11 +258,29 @@ const DB = {
     const snake = this._snakeObj(data);
     if (typeof data.acudiente === 'object') snake.acudiente = JSON.stringify(data.acudiente);
     await supabase.from('estudiantes').update(snake).eq('id', id);
+    // Sincronizar usuario del estudiante
+    const usuario = this._data.usuarios.find(u => u.estudiante_id === id);
+    if (usuario) {
+      const syncData = {};
+      if (data.nombre) syncData.nombre = data.nombre;
+      if (data.apellido) syncData.apellido = data.apellido;
+      if (data.documento) syncData.documento = data.documento;
+      if (data.email) syncData.email = data.email;
+      if (data.activo !== undefined) syncData.activo = data.activo;
+      Object.assign(usuario, syncData);
+      await supabase.from('usuarios').update(this._snakeObj(syncData)).eq('estudiante_id', id);
+    }
   },
   async deleteEstudiante(id) {
     const idx = this._data.estudiantes.findIndex(e => e.id === id);
     if (idx > -1) { this._data.estudiantes[idx].activo = false; }
     await supabase.from('estudiantes').update({ activo: false }).eq('id', id);
+    // Desactivar usuario del estudiante
+    const usuario = this._data.usuarios.find(u => u.estudianteId === id);
+    if (usuario) {
+      usuario.activo = false;
+      await supabase.from('usuarios').update({ activo: false }).eq('estudiante_id', id);
+    }
   },
 
   // ---- Notas ----

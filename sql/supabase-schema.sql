@@ -166,7 +166,31 @@ INSERT INTO usuarios (id, nombre, apellido, email, password, rol, activo) VALUES
   ('u4','Ana','Martínez','ana.martinez@acadex.com','docente123','docente',true);
 
 INSERT INTO usuarios (id, nombre, apellido, email, documento, password, rol, estudiante_id, activo) VALUES
-  ('u5','Sofía','López','1001234567@estudiante.acadex.app','1001234567','1001234567','estudiante','e1',true);
+  ('u_e1','Sofía','López','1001234567@estudiante.acadex.app','1001234567','1001234567','estudiante','e1',true),
+  ('u_e2','Andrés','Moreno','1001234568@estudiante.acadex.app','1001234568','1001234568','estudiante','e2',true),
+  ('u_e3','Valentina','Castro','1001234569@estudiante.acadex.app','1001234569','1001234569','estudiante','e3',true),
+  ('u_e4','Diego','Hernández','1001234570@estudiante.acadex.app','1001234570','1001234570','estudiante','e4',true),
+  ('u_e5','Isabella','Ruiz','1001234571@estudiante.acadex.app','1001234571','1001234571','estudiante','e5',true),
+  ('u_e6','Sebastián','Vargas','1001234572@estudiante.acadex.app','1001234572','1001234572','estudiante','e6',true),
+  ('u_e7','Camila','Torres','1001234573@estudiante.acadex.app','1001234573','1001234573','estudiante','e7',true),
+  ('u_e8','Felipe','Jiménez','1001234574@estudiante.acadex.app','1001234574','1001234574','estudiante','e8',true),
+  ('u_e9','Lucía','Sánchez','1001234575@estudiante.acadex.app','1001234575','1001234575','estudiante','e9',true),
+  ('u_e10','Miguel','Gómez','1001234576@estudiante.acadex.app','1001234576','1001234576','estudiante','e10',true),
+  ('u_e11','Sara','Díaz','1001234577@estudiante.acadex.app','1001234577','1001234577','estudiante','e11',true),
+  ('u_e12','Nicolás','Pereira','1001234578@estudiante.acadex.app','1001234578','1001234578','estudiante','e12',true),
+  ('u_e13','Laura','Molina','1001234579@estudiante.acadex.app','1001234579','1001234579','estudiante','e13',true),
+  ('u_e14','David','Reyes','1001234580@estudiante.acadex.app','1001234580','1001234580','estudiante','e14',true),
+  ('u_e15','Mariana','Vargas','1001234581@estudiante.acadex.app','1001234581','1001234581','estudiante','e15',true),
+  ('u_e16','Carlos','Pino','1001234582@estudiante.acadex.app','1001234582','1001234582','estudiante','e16',true),
+  ('u_e17','Juliana','Cruz','1001234583@estudiante.acadex.app','1001234583','1001234583','estudiante','e17',true),
+  ('u_e18','Esteban','Ríos','1001234584@estudiante.acadex.app','1001234584','1001234584','estudiante','e18',true),
+  ('u_e19','Daniela','Ortega','1001234585@estudiante.acadex.app','1001234585','1001234585','estudiante','e19',true),
+  ('u_e20','Tomás','Aguilar','1001234586@estudiante.acadex.app','1001234586','1001234586','estudiante','e20',true),
+  ('u_e21','Paula','Serrano','1001234587@estudiante.acadex.app','1001234587','1001234587','estudiante','e21',true),
+  ('u_e22','Alejandro','Muñoz','1001234588@estudiante.acadex.app','1001234588','1001234588','estudiante','e22',true),
+  ('u_e23','Natalia','Flores','1001234589@estudiante.acadex.app','1001234589','1001234589','estudiante','e23',true),
+  ('u_e24','Samuel','Cárdenas','1001234590@estudiante.acadex.app','1001234590','1001234590','estudiante','e24',true),
+  ('u_e25','Gabriela','Rojas','1001234591@estudiante.acadex.app','1001234591','1001234591','estudiante','e25',true);
 
 -- Periodos
 INSERT INTO periodos (id, nombre, fecha_inicio, fecha_fin, activo, anio) VALUES
