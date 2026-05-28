@@ -51,8 +51,14 @@ const DB = {
       for (const key of Object.keys(this._data)) {
         if (key === 'config' && !this._data.config && backup.config) {
           this._data.config = backup.config;
-        } else if (Array.isArray(this._data[key]) && this._data[key].length === 0 && Array.isArray(backup[key]) && backup[key].length > 0) {
-          this._data[key] = backup[key];
+        } else if (Array.isArray(this._data[key]) && Array.isArray(backup[key]) && backup[key].length > 0) {
+          // Merge: mantener items de Supabase, agregar los que falten del backup local
+          const existingIds = new Set(this._data[key].map(i => i.id));
+          const missing = backup[key].filter(i => !existingIds.has(i.id));
+          if (missing.length > 0) {
+            this._data[key] = [...this._data[key], ...missing];
+            console.log(`Restored ${missing.length} ${key} from localStorage backup`);
+          }
         }
       }
     } catch (e) { console.warn('localStorage fallback error:', e); }
