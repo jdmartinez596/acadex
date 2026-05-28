@@ -12,7 +12,6 @@ const Students = {
 
   render(container, session) {
     this.session = session;
-    this.viewMode = 'tabla';
     container.innerHTML = `
       <div class="animate-fadeIn">
         <div class="section-header">
