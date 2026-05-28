@@ -65,7 +65,15 @@ const Auth = {
       return { ok: true, user: session };
     }
     // Fallback: buscar en caché local si Supabase falla
-    const local = DB.getUsuarios().find(u => u.documento === documento.trim() && u.activo !== false);
+    let local = DB.getUsuarios().find(u => u.documento === documento.trim() && u.activo !== false);
+    if (!local) {
+      // Último recurso: el estudiante existe pero su usuario no fue creado; validar con password y crear sesión temporal
+      const est = DB.getEstudiantes().find(e => e.documento === documento.trim() && e.activo !== false);
+      if (est) {
+        console.warn('Usuario no encontrado para estudiante', est.id, '- creando sesión temporal');
+        local = { id: 'u_' + est.id, rol: 'estudiante', nombre: est.nombre, apellido: est.apellido, email: est.email, password: est.documento, estudianteId: est.id };
+      }
+    }
     if (!local) return { ok: false, error: 'Estudiante no encontrado' };
     if (local.password !== password) return { ok: false, error: 'Documento/contraseña incorrectos' };
     const session = {
