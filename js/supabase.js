@@ -46,11 +46,12 @@ const supabase = (() => {
     return h;
   }
 
+  const _fetch = window.fetch.bind(window);
   async function fetch_(url, init, timeout = 15000) {
     const ctrl = new AbortController();
     const id = setTimeout(() => ctrl.abort(), timeout);
     try {
-      const res = await fetch_(url, { ...init, signal: ctrl.signal });
+      const res = await _fetch(url, { ...init, signal: ctrl.signal });
       return res;
     } finally {
       clearTimeout(id);
