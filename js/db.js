@@ -187,21 +187,19 @@ const DB = {
     const id = 'inst_' + data.nombre.toLowerCase().replace(/[^a-z0-9]/g, '_');
     if (this._data.instituciones.find(i => i.id === id)) throw new Error('Ya existe una institución con ese nombre');
     const inst = { id, nombre: data.nombre, direccion: data.direccion || '', telefono: data.telefono || '', email: data.email || '', activo: true };
-    const { error } = await supabase.from('instituciones').insert(inst);
-    if (error) throw new Error('Error al crear institución: ' + (error.message || JSON.stringify(error)));
+    await supabase.from('instituciones').insert(inst).catch(e => console.warn('No se pudo guardar en Supabase (tabla no existe?):', e.message));
     this._data.instituciones.push(inst);
     this._persistLocal();
     return inst;
   },
   async updateInstitucion(id, data) {
-    const { error } = await supabase.from('instituciones').update(data).eq('id', id);
-    if (error) throw new Error('Error al actualizar: ' + (error.message || JSON.stringify(error)));
+    await supabase.from('instituciones').update(data).eq('id', id).catch(e => console.warn('No se pudo actualizar en Supabase:', e.message));
     const idx = this._data.instituciones.findIndex(i => i.id === id);
     if (idx > -1) this._data.instituciones[idx] = { ...this._data.instituciones[idx], ...data };
     this._persistLocal();
   },
   async deleteInstitucion(id) {
-    await supabase.from('instituciones').update({ activo: false }).eq('id', id);
+    await supabase.from('instituciones').update({ activo: false }).eq('id', id).catch(e => console.warn('No se pudo desactivar en Supabase:', e.message));
     const idx = this._data.instituciones.findIndex(i => i.id === id);
     if (idx > -1) this._data.instituciones[idx].activo = false;
     this._persistLocal();
