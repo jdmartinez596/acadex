@@ -204,7 +204,7 @@ const Institutions = {
   },
 
   getSetupSQL() {
-    return `-- ACADEX — Migraci\\u00f3n Multi-Instituci\\u00f3n
+    return `-- ACADEX — Migración Multi-Institución
 
 CREATE TABLE IF NOT EXISTS instituciones (
   id TEXT PRIMARY KEY,
@@ -216,7 +216,7 @@ CREATE TABLE IF NOT EXISTS instituciones (
   creado TIMESTAMP DEFAULT NOW()
 );
 
-INSERT INTO instituciones (id, nombre) VALUES ('inst_default', 'Instituci\\u00f3n Principal') ON CONFLICT (id) DO NOTHING;
+INSERT INTO instituciones (id, nombre) VALUES ('inst_default', 'Institución Principal') ON CONFLICT (id) DO NOTHING;
 
 -- Permitir rol super_admin en usuarios
 ALTER TABLE usuarios DROP CONSTRAINT IF EXISTS usuarios_rol_check;

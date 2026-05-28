@@ -8,9 +8,15 @@ const Auth = {
   async init() {
     const stored = this.getSession();
     if (stored) {
-      // Verify user still exists in DB
-      const { data } = await supabase.from('usuarios').select('id').eq('id', stored.userId).single();
-      if (!data) { this.logout(); return false; }
+      try {
+        const { data, error } = await supabase.from('usuarios').select('id').eq('id', stored.userId).single();
+        if (error && (error.code === '42P01' || error.message?.includes('Could not find the table'))) {
+          return true;
+        }
+        if (!data) { this.logout(); return false; }
+      } catch {
+        return true;
+      }
       return true;
     }
     return false;

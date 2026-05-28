@@ -287,11 +287,11 @@ const Academic = {
           </div>
         </div>
         <div class="form-group"><label>Orden</label><input class="form-control" type="number" name="orden" value="${DB.getGrados().length+1}"></div>
-      </form>`, () => {
+      </form>`, async () => {
       const form = document.getElementById('form-grado');
       if (!form.checkValidity()) { form.reportValidity(); return false; }
       const data = Utils.serializeForm(form);
-      DB.addGrado({ nombre: data.nombre, nivel: data.nivel, orden: parseInt(data.orden)||99 });
+      await DB.addGrado({ nombre: data.nombre, nivel: data.nivel, orden: parseInt(data.orden)||99 });
       Utils.toast('Grado creado exitosamente', 'success');
       return true;
     });
@@ -312,9 +312,9 @@ const Academic = {
             </select>
           </div>
         </div>
-      </form>`, () => {
+      </form>`, async () => {
       const data = Utils.serializeForm(document.getElementById('form-grado'));
-      DB.updateGrado(id, data);
+      await DB.updateGrado(id, data);
       Utils.toast('Grado actualizado', 'success');
       return true;
     });
@@ -345,10 +345,10 @@ const Academic = {
             ${docentes.map(d=>`<option value="${d.id}">${Utils.nombreCompleto(d)}</option>`).join('')}
           </select>
         </div>
-      </form>`, () => {
+      </form>`, async () => {
       const form = document.getElementById('form-grupo');
       if (!form.checkValidity()) { form.reportValidity(); return false; }
-      DB.addGrupo(Utils.serializeForm(form));
+      await DB.addGrupo(Utils.serializeForm(form));
       Utils.toast('Grupo creado exitosamente', 'success');
       return true;
     });
@@ -373,8 +373,8 @@ const Academic = {
             ${docentes.map(d=>`<option value="${d.id}" ${d.id===g.director?'selected':''}>${Utils.nombreCompleto(d)}</option>`).join('')}
           </select>
         </div>
-      </form>`, () => {
-      DB.updateGrupo(id, Utils.serializeForm(document.getElementById('form-grupo')));
+      </form>`, async () => {
+      await DB.updateGrupo(id, Utils.serializeForm(document.getElementById('form-grupo')));
       Utils.toast('Grupo actualizado', 'success');
       return true;
     });
@@ -414,12 +414,12 @@ const Academic = {
             </label>`).join('')}
           </div>
         </div>
-      </form>`, () => {
+      </form>`, async () => {
       const form = document.getElementById('form-materia');
       if (!form.checkValidity()) { form.reportValidity(); return false; }
       const data = Utils.serializeForm(form);
       data.horas = parseInt(data.horas)||4;
-      DB.addMateria(data);
+      await DB.addMateria(data);
       Utils.toast('Materia creada exitosamente', 'success');
       return true;
     });
@@ -445,10 +445,10 @@ const Academic = {
         <div class="form-group"><label>Docente</label>
           <select class="form-control" name="docenteId"><option value="">Sin asignar</option>${docentes.map(d=>`<option value="${d.id}" ${d.id===m.docenteId?'selected':''}>${Utils.nombreCompleto(d)}</option>`).join('')}</select>
         </div>
-      </form>`, () => {
+      </form>`, async () => {
       const data = Utils.serializeForm(document.getElementById('form-materia'));
       data.horas = parseInt(data.horas)||4;
-      DB.updateMateria(id, data);
+      await DB.updateMateria(id, data);
       Utils.toast('Materia actualizada', 'success');
       return true;
     });
@@ -478,13 +478,13 @@ const Academic = {
             </select>
           </div>
         </div>
-      </form>`, () => {
+      </form>`, async () => {
       const form = document.getElementById('form-periodo');
       if (!form.checkValidity()) { form.reportValidity(); return false; }
       const data = Utils.serializeForm(form);
       data.activo = data.activo === 'true';
       data.año = parseInt(data.año);
-      DB.addPeriodo(data);
+      await DB.addPeriodo(data);
       Utils.toast('Período creado exitosamente', 'success');
       return true;
     });
@@ -500,8 +500,8 @@ const Academic = {
           <div class="form-group"><label>Fecha Inicio</label><input class="form-control" type="date" name="fechaInicio" value="${p.fechaInicio}"></div>
           <div class="form-group"><label>Fecha Fin</label><input class="form-control" type="date" name="fechaFin" value="${p.fechaFin}"></div>
         </div>
-      </form>`, () => {
-      DB.updatePeriodo(id, Utils.serializeForm(document.getElementById('form-periodo')));
+      </form>`, async () => {
+      await DB.updatePeriodo(id, Utils.serializeForm(document.getElementById('form-periodo')));
       Utils.toast('Período actualizado', 'success');
       return true;
     });
@@ -547,10 +547,10 @@ const Academic = {
           <div class="form-group"><label>Materia</label><select class="form-control" name="materiaId"><option value="">General</option>${materias.map(m=>`<option value="${m.id}">${m.nombre}</option>`).join('')}</select></div>
         </div>
         <div class="form-group"><label>Descripción</label><textarea class="form-control" name="descripcion" rows="2" placeholder="Descripción opcional..."></textarea></div>
-      </form>`, () => {
+      </form>`, async () => {
       const form = document.getElementById('form-actividad');
       if (!form.checkValidity()) { form.reportValidity(); return false; }
-      DB.addActividad(Utils.serializeForm(form));
+      await DB.addActividad(Utils.serializeForm(form));
       Utils.toast('Actividad agregada', 'success');
       return true;
     });
@@ -583,8 +583,9 @@ const Academic = {
     div.querySelectorAll('.modal-close, .modal-overlay').forEach(el => {
       el.addEventListener('click', () => { div.remove(); document.body.style.overflow=''; });
     });
-    document.getElementById(`${id}-save`).addEventListener('click', () => {
-      if (onSave()) {
+    document.getElementById(`${id}-save`).addEventListener('click', async () => {
+      const result = await onSave();
+      if (result) {
         div.remove();
         document.body.style.overflow='';
         this.renderTab(Auth.getSession());

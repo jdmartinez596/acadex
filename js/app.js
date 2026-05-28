@@ -135,15 +135,7 @@ const App = {
       }, 300));
     }
 
-    // Mobile menu
-    document.getElementById('mobile-menu-btn')?.addEventListener('click', () => {
-      document.getElementById('sidebar').classList.toggle('open');
-      document.getElementById('sidebar-overlay').classList.toggle('open');
-    });
-    document.getElementById('sidebar-overlay')?.addEventListener('click', () => {
-      document.getElementById('sidebar').classList.remove('open');
-      document.getElementById('sidebar-overlay').classList.remove('open');
-    });
+    // Mobile menu — manejado en index.html para evitar duplicados
   },
 
   setupSidebarToggle() {
