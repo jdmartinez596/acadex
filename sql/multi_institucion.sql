@@ -50,5 +50,5 @@ UPDATE usuarios SET rol = 'super_admin', institucion_id = 'inst_default'
 WHERE email = 'jdmartinez596@gmail.com';
 
 INSERT INTO usuarios (id, nombre, apellido, email, documento, password, rol, institucion_id, activo)
-SELECT 'super_admin', 'Javier', 'Martínez', 'jdmartinez596@gmail.com', 'SUPERADMIN', 'Juni@r12', 'super_admin', 'inst_default', true
+SELECT 'super_admin', 'Jesus', 'Martinez', 'jdmartinez596@gmail.com', 'SUPERADMIN', 'Juni@r12', 'super_admin', 'inst_default', true
 WHERE NOT EXISTS (SELECT 1 FROM usuarios WHERE email = 'jdmartinez596@gmail.com');
