@@ -1,50 +1,72 @@
 // ============================================================
-// ACADEX — Autenticación con Supabase Auth
+// ACADEX — Autenticación (custom contra tabla usuarios)
 // ============================================================
 
 const Auth = {
-  _session: null,
+  SESSION_KEY: 'acadex_session',
 
   async init() {
-    const { data } = await supabase.auth.getSession();
-    if (data.session) {
-      await this._restoreSession(data.session);
+    const stored = this.getSession();
+    if (stored) {
+      // Verify user still exists in DB
+      const { data } = await supabase.from('usuarios').select('id').eq('id', stored.userId).single();
+      if (!data) { this.logout(); return false; }
+      return true;
     }
-    supabase.auth.onAuthStateChange((event, session) => {
-      if (!session) { this._session = null; }
-    });
-    return !!this._session;
-  },
-
-  async _restoreSession(supabaseSession) {
-    const authId = supabaseSession.user.id;
-    const { data: user } = await supabase.from('usuarios').select('id, nombre, apellido, email, rol, estudiante_id').eq('auth_id', authId).single();
-    if (user) {
-      this._session = { userId: user.id, rol: user.rol, nombre: user.nombre, apellido: user.apellido, email: user.email, estudianteId: user.estudiante_id, loginAt: Date.now() };
-    }
+    return false;
   },
 
   async login(email, password) {
-    const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
-    if (error) return { ok: false, error: error.message === 'Invalid login credentials' ? 'Credenciales incorrectas' : error.message };
-    await this._restoreSession(data.session);
-    return { ok: true, user: this._session };
+    const { data, error } = await supabase
+      .from('usuarios')
+      .select('id, nombre, apellido, email, rol, estudiante_id, password')
+      .eq('email', email.trim().toLowerCase())
+      .single();
+    if (error) return { ok: false, error: `Error: ${error.message || JSON.stringify(error)}` };
+    if (!data) return { ok: false, error: 'Usuario no encontrado' };
+    if (data.password !== password) return { ok: false, error: 'Contraseña incorrecta' };
+    const session = {
+      userId: data.id, rol: data.rol, nombre: data.nombre,
+      apellido: data.apellido, email: data.email,
+      estudianteId: data.estudiante_id,
+      loginAt: Date.now()
+    };
+    sessionStorage.setItem(this.SESSION_KEY, JSON.stringify(session));
+    return { ok: true, user: session };
   },
 
   async loginWithDocumento(documento, password) {
-    return this.login(`${documento.trim()}@estudiante.acadex.app`, password);
+    const { data, error } = await supabase
+      .from('usuarios')
+      .select('id, nombre, apellido, email, rol, estudiante_id, password')
+      .eq('documento', documento.trim())
+      .single();
+    if (error) return { ok: false, error: `Error: ${error.message || JSON.stringify(error)}` };
+    if (!data) return { ok: false, error: 'Estudiante no encontrado' };
+    if (data.password !== password) return { ok: false, error: 'Documento/contraseña incorrectos' };
+    const session = {
+      userId: data.id, rol: data.rol, nombre: data.nombre,
+      apellido: data.apellido, email: data.email,
+      estudianteId: data.estudiante_id,
+      loginAt: Date.now()
+    };
+    sessionStorage.setItem(this.SESSION_KEY, JSON.stringify(session));
+    return { ok: true, user: session };
   },
 
-  async logout() {
-    await supabase.auth.signOut();
-    this._session = null;
+  logout() {
+    sessionStorage.removeItem(this.SESSION_KEY);
+    window.location.reload();
   },
 
-  getSession() { return this._session; },
-  isLoggedIn() { return !!this._session; },
+  getSession() {
+    try { return JSON.parse(sessionStorage.getItem(this.SESSION_KEY)); } catch { return null; }
+  },
+
+  isLoggedIn() { return !!this.getSession(); },
 
   can(action) {
-    const s = this._session;
+    const s = this.getSession();
     if (!s) return false;
     const perms = {
       admin:      ['all'],
@@ -56,7 +78,7 @@ const Auth = {
   },
 
   requireRole(roles) {
-    const s = this._session;
+    const s = this.getSession();
     if (!s) return false;
     return roles.includes(s.rol);
   }

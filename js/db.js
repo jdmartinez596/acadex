@@ -25,24 +25,24 @@ const DB = {
 
   async _loadAll() {
     const loaders = [
-      this._loadTable('config', this._mapConfig),
-      this._loadTable('usuarios', this._mapRow),
-      this._loadTable('periodos', this._mapRow),
-      this._loadTable('grados', this._mapRow),
-      this._loadTable('grupos', this._mapGrupo),
-      this._loadTable('materias', this._mapRow),
-      this._loadTable('estudiantes', this._mapEstudiante),
-      this._loadTable('notas', this._mapRow),
-      this._loadTable('asistencia', this._mapRow),
-      this._loadTable('actividades', this._mapRow),
-      this._loadTable('notificaciones', this._mapRow)
+      this._loadTable('config', r => this._mapConfig(r)),
+      this._loadTable('usuarios', r => this._mapRow(r), 'id,nombre,apellido,email,documento,rol,avatar,activo,estudiante_id,creado'),
+      this._loadTable('periodos', r => this._mapRow(r)),
+      this._loadTable('grados', r => this._mapRow(r)),
+      this._loadTable('grupos', r => this._mapGrupo(r)),
+      this._loadTable('materias', r => this._mapRow(r)),
+      this._loadTable('estudiantes', r => this._mapEstudiante(r)),
+      this._loadTable('notas', r => this._mapRow(r)),
+      this._loadTable('asistencia', r => this._mapRow(r)),
+      this._loadTable('actividades', r => this._mapRow(r)),
+      this._loadTable('notificaciones', r => this._mapRow(r))
     ];
     const results = await Promise.allSettled(loaders);
     results.forEach((r, i) => { if (r.status === 'rejected') console.warn('DB load error:', r.reason); });
   },
 
-  async _loadTable(name, mapper) {
-    const { data, error } = await supabase.from(name).select('*');
+  async _loadTable(name, mapper, columns = '*') {
+    const { data, error } = await supabase.from(name).select(columns);
     if (error) throw error;
     const key = name === 'config' ? name : name;
     if (name === 'config') {

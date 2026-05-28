@@ -1,6 +1,20 @@
 -- ============================================================
 -- ACADEX — Esquema de Supabase
--- Ejecutar esto en el SQL Editor de Supabase
+-- Ejecutar en el SQL Editor de Supabase.
+--
+-- Si ya ejecutaste la versión anterior (con auth_id y
+-- crear_usuario_auth), necesitas migrar manualmente:
+--   ALTER TABLE usuarios ADD COLUMN password text;
+--   ALTER TABLE usuarios ADD COLUMN documento text;
+--   ALTER TABLE usuarios ALTER COLUMN email DROP NOT NULL;
+--   ALTER TABLE usuarios DROP COLUMN auth_id;
+--   UPDATE usuarios SET password = 'admin123' WHERE id = 'u1';
+--   UPDATE usuarios SET password = 'docente123' WHERE id IN ('u2','u3','u4');
+--   UPDATE usuarios SET password = '1001234567', documento = '1001234567' WHERE id = 'u5';
+--   DROP FUNCTION IF EXISTS crear_usuario_auth(text,text,text);
+--   ALTER TABLE usuarios ALTER COLUMN password SET NOT NULL;
+--   ALTER TABLE usuarios ADD CONSTRAINT usuarios_documento_unique UNIQUE (documento);
+-- Luego ejecuta el resto del schema normalmente.
 -- ============================================================
 
 -- 1. Configuración de la institución
@@ -15,10 +29,12 @@ CREATE TABLE config (
 -- 2. Usuarios del sistema
 CREATE TABLE usuarios (
   id text primary key,
-  auth_id uuid references auth.users(id) on delete cascade,
   nombre text not null,
   apellido text not null,
-  email text not null unique,
+  email text,
+  documento text unique,
+  password text not null,
+  UNIQUE(email),
   rol text not null check (rol in ('admin','docente','estudiante')),
   avatar text,
   activo boolean default true,
@@ -142,12 +158,15 @@ INSERT INTO config (id, institucion, escala, tipos_actividad, boletin_template) 
   '{"encabezado":"BOLETÍN DE CALIFICACIONES","pie":"Firma del Director","colorPrimario":"#1E3A5F"}'
 );
 
--- Usuarios demo (los auth_id se vinculan después con Auth)
-INSERT INTO usuarios (id, nombre, apellido, email, rol, activo) VALUES
-  ('u1','Admin','Sistema','admin@acadex.com','admin',true),
-  ('u2','María','González','docente@acadex.com','docente',true),
-  ('u3','Pedro','Ramírez','pedro.ramirez@acadex.com','docente',true),
-  ('u4','Ana','Martínez','ana.martinez@acadex.com','docente',true);
+-- Usuarios demo (autenticación custom contra la tabla)
+INSERT INTO usuarios (id, nombre, apellido, email, password, rol, activo) VALUES
+  ('u1','Admin','Sistema','admin@acadex.com','admin123','admin',true),
+  ('u2','María','González','docente@acadex.com','docente123','docente',true),
+  ('u3','Pedro','Ramírez','pedro.ramirez@acadex.com','docente123','docente',true),
+  ('u4','Ana','Martínez','ana.martinez@acadex.com','docente123','docente',true);
+
+INSERT INTO usuarios (id, nombre, apellido, email, documento, password, rol, estudiante_id, activo) VALUES
+  ('u5','Sofía','López','1001234567@estudiante.acadex.app','1001234567','1001234567','estudiante','e1',true);
 
 -- Periodos
 INSERT INTO periodos (id, nombre, fecha_inicio, fecha_fin, activo, anio) VALUES
@@ -231,62 +250,38 @@ INSERT INTO notas (id, estudiante_id, materia_id, periodo_id, tipo, valor, descr
   ('n4','e1','m1','p1','proyecto',9.5,'Proyecto geometría','2024-04-10','u2'),
   ('n5','e1','m1','p1','participacion',8.0,'Participación en clase','2024-04-15','u2');
 
--- Crear usuarios de Auth para los usuarios demo
--- Nota: ejecutar después de crear los usuarios arriba
--- Es necesario desactivar "Confirmar email" en Auth > Settings de Supabase
-
--- ============================================================
--- CREAR USUARIOS DE AUTH
--- ============================================================
--- Nota: desactivar "Confirmar email" en Auth > Settings de Supabase
--- antes de ejecutar esta sección
-
--- Función para crear usuarios de Auth + vincular con usuarios
-create or replace function crear_usuario_auth(
-  p_email text,
-  p_password text,
-  p_user_id text
-) returns void language plpgsql as $$
-declare
-  v_auth_id uuid;
-begin
-  v_auth_id := (select id from auth.users where email = p_email);
-  if v_auth_id is null then
-    v_auth_id := gen_random_uuid();
-    insert into auth.users (id, instance_id, email, encrypted_password, email_confirmed_at, raw_app_meta_data, raw_user_meta_data, created_at, updated_at, role)
-    values (
-      v_auth_id,
-      '00000000-0000-0000-0000-000000000000',
-      p_email,
-      crypt(p_password, gen_salt('bf')),
-      now(),
-      '{"provider":"email","providers":["email"]}',
-      '{}',
-      now(),
-      now(),
-      'authenticated'
-    );
-  end if;
-  update usuarios set auth_id = v_auth_id where id = p_user_id;
-end;
-$$;
-
--- Admin y docentes
-select crear_usuario_auth('admin@acadex.com', 'admin123', 'u1');
-select crear_usuario_auth('docente@acadex.com', 'docente123', 'u2');
-select crear_usuario_auth('pedro.ramirez@acadex.com', 'docente123', 'u3');
-select crear_usuario_auth('ana.martinez@acadex.com', 'docente123', 'u4');
-
--- Estudiante (email = documento@estudiante.acadex.app, password = documento)
-INSERT INTO usuarios (id, nombre, apellido, email, rol, estudiante_id, activo) VALUES
-  ('u5','Sofía','López','1001234567@estudiante.acadex.app','estudiante','e1',true);
-select crear_usuario_auth('1001234567@estudiante.acadex.app', '1001234567', 'u5');
-
 -- ============================================================
 -- STORAGE: Bucket para avatares y fotos
 -- ============================================================
 INSERT INTO storage.buckets (id, name, public) VALUES ('avatars', 'avatars', true)
 ON CONFLICT (id) DO NOTHING;
 
--- Permitir subida de archivos al bucket avatars (RLS pública)
 CREATE POLICY "Public Access" ON storage.objects FOR ALL USING (bucket_id = 'avatars') WITH CHECK (bucket_id = 'avatars');
+
+-- ============================================================
+-- RLS: Permitir acceso público a todas las tablas
+-- (App interna, sin autenticación de Supabase Auth)
+-- ============================================================
+ALTER TABLE config ENABLE ROW LEVEL SECURITY;
+ALTER TABLE usuarios ENABLE ROW LEVEL SECURITY;
+ALTER TABLE periodos ENABLE ROW LEVEL SECURITY;
+ALTER TABLE grados ENABLE ROW LEVEL SECURITY;
+ALTER TABLE grupos ENABLE ROW LEVEL SECURITY;
+ALTER TABLE materias ENABLE ROW LEVEL SECURITY;
+ALTER TABLE estudiantes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE notas ENABLE ROW LEVEL SECURITY;
+ALTER TABLE asistencia ENABLE ROW LEVEL SECURITY;
+ALTER TABLE actividades ENABLE ROW LEVEL SECURITY;
+ALTER TABLE notificaciones ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Allow all" ON config FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all" ON usuarios FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all" ON periodos FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all" ON grados FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all" ON grupos FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all" ON materias FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all" ON estudiantes FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all" ON notas FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all" ON asistencia FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all" ON actividades FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all" ON notificaciones FOR ALL USING (true) WITH CHECK (true);

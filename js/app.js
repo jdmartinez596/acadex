@@ -136,10 +136,10 @@ const App = {
 
   setupDarkMode() {
     const config = DB.getConfig();
-    if (config.darkMode) document.documentElement.setAttribute('data-theme','dark');
+    if (config?.darkMode) document.documentElement.setAttribute('data-theme','dark');
     const toggleBtn = document.getElementById('dark-mode-toggle');
     if (toggleBtn) {
-      if (config.darkMode) toggleBtn.classList.add('on');
+      if (config?.darkMode) toggleBtn.classList.add('on');
       toggleBtn.addEventListener('click', () => {
         const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
         if (isDark) {
