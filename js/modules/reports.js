@@ -53,7 +53,7 @@ const Reports = {
     let estPresel = null;
     if (this.session.rol === 'estudiante') {
       const user = DB.getUsuario(this.session.userId);
-      estPresel = user?.estudianteId;
+      estPresel = user?.estudianteId || this.session.userId;
     }
 
     content.innerHTML = `

@@ -1,33 +1,50 @@
 // ============================================================
-// ACADEX — Autenticación y Sesión
+// ACADEX — Autenticación con Supabase Auth
 // ============================================================
 
 const Auth = {
-  SESSION_KEY: 'acadex_session',
+  _session: null,
 
-  login(email, password) {
-    const user = DB.getUsuarioByEmail(email.trim().toLowerCase());
-    if (!user) return { ok: false, error: 'Usuario no encontrado' };
-    if (user.password !== password) return { ok: false, error: 'Contraseña incorrecta' };
-    if (!user.activo) return { ok: false, error: 'Usuario desactivado' };
-    const session = { userId: user.id, rol: user.rol, nombre: user.nombre, apellido: user.apellido, email: user.email, loginAt: Date.now() };
-    sessionStorage.setItem(this.SESSION_KEY, JSON.stringify(session));
-    return { ok: true, user: session };
+  async init() {
+    const { data } = await supabase.auth.getSession();
+    if (data.session) {
+      await this._restoreSession(data.session);
+    }
+    supabase.auth.onAuthStateChange((event, session) => {
+      if (!session) { this._session = null; }
+    });
+    return !!this._session;
   },
 
-  logout() {
-    sessionStorage.removeItem(this.SESSION_KEY);
-    window.location.reload();
+  async _restoreSession(supabaseSession) {
+    const authId = supabaseSession.user.id;
+    const { data: user } = await supabase.from('usuarios').select('id, nombre, apellido, email, rol, estudiante_id').eq('auth_id', authId).single();
+    if (user) {
+      this._session = { userId: user.id, rol: user.rol, nombre: user.nombre, apellido: user.apellido, email: user.email, estudianteId: user.estudiante_id, loginAt: Date.now() };
+    }
   },
 
-  getSession() {
-    try { return JSON.parse(sessionStorage.getItem(this.SESSION_KEY)); } catch { return null; }
+  async login(email, password) {
+    const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
+    if (error) return { ok: false, error: error.message === 'Invalid login credentials' ? 'Credenciales incorrectas' : error.message };
+    await this._restoreSession(data.session);
+    return { ok: true, user: this._session };
   },
 
-  isLoggedIn() { return !!this.getSession(); },
+  async loginWithDocumento(documento, password) {
+    return this.login(`${documento.trim()}@estudiante.acadex.app`, password);
+  },
+
+  async logout() {
+    await supabase.auth.signOut();
+    this._session = null;
+  },
+
+  getSession() { return this._session; },
+  isLoggedIn() { return !!this._session; },
 
   can(action) {
-    const s = this.getSession();
+    const s = this._session;
     if (!s) return false;
     const perms = {
       admin:      ['all'],
@@ -39,18 +56,20 @@ const Auth = {
   },
 
   requireRole(roles) {
-    const s = this.getSession();
+    const s = this._session;
     if (!s) return false;
     return roles.includes(s.rol);
   }
 };
 
 // ---- Login UI ----
-function initLogin() {
+async function initLogin() {
+  await DB.init();
   const page = document.getElementById('login-page');
   const app  = document.getElementById('app-shell');
 
-  if (Auth.isLoggedIn()) {
+  const loggedIn = await Auth.init();
+  if (loggedIn) {
     page.style.display = 'none';
     app.classList.add('visible');
     App.init();
@@ -58,56 +77,79 @@ function initLogin() {
   }
 
   let selectedRol = 'admin';
+  const emailInput = document.getElementById('login-email');
+  const emailLabel = document.getElementById('login-email-label');
+  const demoBox   = document.getElementById('demo-credentials');
 
-  // Role selector
+  function updateFormForRol(rol) {
+    if (rol === 'estudiante') {
+      emailLabel.textContent = 'Número de Documento';
+      emailInput.type = 'text';
+      emailInput.placeholder = 'ej: 1001234567';
+      const est = DB.getEstudiantes();
+      const primerEst = est.find(e => e.activo);
+      if (primerEst) {
+        emailInput.value = primerEst.documento;
+        document.getElementById('login-password').value = primerEst.documento;
+      }
+      if (demoBox) {
+        demoBox.innerHTML = est.filter(e => e.activo).slice(0, 3).map(e =>
+          `<span style="display:block">${e.documento} / ${e.documento} — ${e.nombre} ${e.apellido}</span>`
+        ).join('');
+      }
+    } else {
+      emailLabel.textContent = 'Correo Electrónico';
+      emailInput.type = 'email';
+      const demos = {
+        admin:   { email: 'admin@acadex.com',      pwd: 'admin123' },
+        docente: { email: 'docente@acadex.com',    pwd: 'docente123' }
+      };
+      emailInput.placeholder = demos[rol].email;
+      emailInput.value = demos[rol].email;
+      document.getElementById('login-password').value = demos[rol].pwd;
+      if (demoBox) {
+        demoBox.innerHTML =
+          `<span style="display:block">${demos.admin.email} / ${demos.admin.pwd}</span>` +
+          `<span style="display:block">${demos.docente.email} / ${demos.docente.pwd}</span>`;
+      }
+    }
+  }
+
   document.querySelectorAll('.role-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       selectedRol = btn.dataset.rol;
-      // Auto fill demo credentials
-      const demos = {
-        admin:      { email: 'admin@acadex.com',    pwd: 'admin123' },
-        docente:    { email: 'docente@acadex.com',  pwd: 'docente123' },
-        estudiante: { email: 'estudiante@acadex.com', pwd: 'est123' }
-      };
-      document.getElementById('login-email').value = demos[selectedRol].email;
-      document.getElementById('login-password').value = demos[selectedRol].pwd;
+      updateFormForRol(selectedRol);
     });
   });
 
-  // Activate admin by default
   document.querySelector('.role-btn[data-rol="admin"]').classList.add('active');
-  document.getElementById('login-email').value = 'admin@acadex.com';
-  document.getElementById('login-password').value = 'admin123';
+  updateFormForRol('admin');
 
-  // Form submit
-  document.getElementById('login-form').addEventListener('submit', e => {
+  document.getElementById('login-form').addEventListener('submit', async e => {
     e.preventDefault();
-    const email = document.getElementById('login-email').value;
+    const value = document.getElementById('login-email').value;
     const password = document.getElementById('login-password').value;
     const btn = document.getElementById('login-btn');
-    
+
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner-inline"></span> Ingresando...';
 
-    setTimeout(() => {
-      const result = Auth.login(email, password);
-      if (result.ok) {
-        page.style.display = 'none';
-        app.classList.add('visible');
-        App.init();
-        Utils.toast(`¡Bienvenido/a, ${result.user.nombre}! 🎉`, 'success');
-      } else {
-        document.getElementById('login-error').textContent = result.error;
-        document.getElementById('login-error').style.display = 'block';
-        btn.disabled = false;
-        btn.innerHTML = 'Ingresar al Sistema';
-      }
-    }, 600);
+    const result = selectedRol === 'estudiante' ? await Auth.loginWithDocumento(value, password) : await Auth.login(value, password);
+    if (result.ok) {
+      page.style.display = 'none';
+      app.classList.add('visible');
+      App.init();
+      Utils.toast(`¡Bienvenido/a, ${result.user.nombre}! 🎉`, 'success');
+    } else {
+      document.getElementById('login-error').textContent = result.error;
+      document.getElementById('login-error').style.display = 'block';
+      btn.disabled = false;
+      btn.innerHTML = 'Ingresar al Sistema';
+    }
   });
 
-  // Password recovery modal
   document.getElementById('forgot-password-link').addEventListener('click', e => {
     e.preventDefault();
     Utils.showModal('modal-recovery');
@@ -120,7 +162,6 @@ function initLogin() {
     Utils.toast(`Se ha enviado un enlace de recuperación a ${email}`, 'info', 5000);
   });
 
-  // Toggle password visibility
   document.getElementById('toggle-password').addEventListener('click', () => {
     const input = document.getElementById('login-password');
     const btn = document.getElementById('toggle-password');

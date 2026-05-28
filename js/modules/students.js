@@ -401,21 +401,31 @@ const Students = {
 
     // Foto preview
     let fotoData = est?.foto || null;
+    let fotoFile = null;
     document.getElementById('foto-input').addEventListener('change', e => {
       const file = e.target.files[0];
       if (!file) return;
+      fotoFile = file;
       const reader = new FileReader();
       reader.onload = ev => {
-        fotoData = ev.target.result;
-        document.getElementById('photo-prev').innerHTML = `<img src="${fotoData}" id="foto-img">`;
+        document.getElementById('photo-prev').innerHTML = `<img src="${ev.target.result}" id="foto-img">`;
       };
       reader.readAsDataURL(file);
     });
 
-    document.getElementById('save-est-btn').addEventListener('click', () => {
+    document.getElementById('save-est-btn').addEventListener('click', async () => {
       const form = document.getElementById('form-estudiante');
       if (!form.checkValidity()) { form.reportValidity(); return; }
       const data = Utils.serializeForm(form);
+
+      // Subir foto a Supabase Storage si hay archivo nuevo
+      if (fotoFile) {
+        try {
+          const tmpId = 'tmp_' + Date.now();
+          fotoData = await Storage.uploadStudentPhoto(tmpId, fotoFile);
+        } catch (err) { console.error('Upload error:', err); }
+      }
+
       const estData = {
         nombre: data.nombre, apellido: data.apellido,
         documento: data.documento, tipoDoc: data.tipoDoc,
@@ -430,8 +440,21 @@ const Students = {
           email: data.acudiente_email
         }
       };
-      if (est) { DB.updateEstudiante(id, estData); Utils.toast('Estudiante actualizado', 'success'); }
-      else { DB.addEstudiante(estData); Utils.toast('Estudiante registrado exitosamente', 'success'); }
+      if (est) {
+        await DB.updateEstudiante(id, estData);
+        if (fotoFile && fotoData) {
+          const newUrl = await Storage.uploadStudentPhoto(id, fotoFile);
+          await DB.updateEstudiante(id, { foto: newUrl });
+        }
+        Utils.toast('Estudiante actualizado', 'success');
+      } else {
+        const newEst = await DB.addEstudiante(estData);
+        if (fotoFile && fotoData) {
+          const newUrl = await Storage.uploadStudentPhoto(newEst.id, fotoFile);
+          await DB.updateEstudiante(newEst.id, { foto: newUrl });
+        }
+        Utils.toast('Estudiante registrado exitosamente', 'success');
+      }
       modal.remove();
       document.body.style.overflow='';
       this.renderList(session);

@@ -87,8 +87,8 @@ const App = {
       item.addEventListener('click', () => {
         this.navigate(item.dataset.route);
         // Close mobile
-        sidebar.classList.remove('mobile-open');
-        document.getElementById('sidebar-overlay').classList.remove('active');
+        sidebar.classList.remove('open');
+        document.getElementById('sidebar-overlay').classList.remove('open');
       });
     });
   },
@@ -114,12 +114,12 @@ const App = {
 
     // Mobile menu
     document.getElementById('mobile-menu-btn')?.addEventListener('click', () => {
-      document.getElementById('sidebar').classList.toggle('mobile-open');
-      document.getElementById('sidebar-overlay').classList.toggle('active');
+      document.getElementById('sidebar').classList.toggle('open');
+      document.getElementById('sidebar-overlay').classList.toggle('open');
     });
     document.getElementById('sidebar-overlay')?.addEventListener('click', () => {
-      document.getElementById('sidebar').classList.remove('mobile-open');
-      document.getElementById('sidebar-overlay').classList.remove('active');
+      document.getElementById('sidebar').classList.remove('open');
+      document.getElementById('sidebar-overlay').classList.remove('open');
     });
   },
 

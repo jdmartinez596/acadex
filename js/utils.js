@@ -37,7 +37,7 @@ const Utils = {
 
   // ---- Colores por estado/nota ----
   colorNota(valor, min = 6.0) {
-    if (valor === null || valor === undefined) return 'var(--text-muted)';
+    if (valor === null || valor === undefined) return 'var(--tx-3)';
     if (valor >= 9) return '#2ECC71';
     if (valor >= 7) return '#3498DB';
     if (valor >= min) return '#F39C12';

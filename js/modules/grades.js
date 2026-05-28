@@ -108,7 +108,7 @@ const Grades = {
 
   renderEstudianteView(container, session, config, periodos, materias) {
     const user = DB.getUsuario(session.userId);
-    const estId = user?.estudianteId;
+    const estId = user?.estudianteId || (session.rol === 'estudiante' ? session.userId : null);
     if (!estId) {
       container.innerHTML = '<div class="empty-state"><div class="empty-icon">📝</div><h3>Sin datos</h3><p>No se encontró información de estudiante</p></div>';
       return;
