@@ -9,6 +9,9 @@ const supabase = (() => {
   const ANON = SUPABASE_ANON_KEY;
 
   // ---- Tokens ----
+  // Limpiar cualquier token viejo de Supabase Auth (ahora usamos auth custom)
+  localStorage.removeItem(AUTH_KEY);
+
   function loadSession() {
     try { return JSON.parse(localStorage.getItem(AUTH_KEY)); } catch { return null; }
   }
