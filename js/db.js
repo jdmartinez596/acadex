@@ -83,14 +83,22 @@ const DB = {
   },
 
   async _loadTable(name, mapper, columns = '*') {
-    const { data, error } = await supabase.from(name).select(columns);
-    if (error) throw error;
-    const key = name === 'config' ? name : name;
-    if (name === 'config') {
-      this._data.config = data?.[0] ? mapper(data[0]) : null;
-      return;
+    try {
+      const { data, error } = await supabase.from(name).select(columns);
+      if (error) throw error;
+      const key = name === 'config' ? name : name;
+      if (name === 'config') {
+        this._data.config = data?.[0] ? mapper(data[0]) : null;
+        return;
+      }
+      this._data[name] = (data || []).map(mapper);
+    } catch (e) {
+      if (e?.message?.includes('Could not find the table') || e?.code === '42P01') {
+        console.warn(`Tabla '${name}' no existe en Supabase — usando solo caché local`);
+        return;
+      }
+      throw e;
     }
-    this._data[name] = (data || []).map(mapper);
   },
 
   _mapRow(row) {

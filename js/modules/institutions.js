@@ -137,6 +137,21 @@ const Institutions = {
             </div>
           </div>
         </div>
+
+        <div class="card" style="margin-top:20px;border:1px solid rgba(52,152,219,.3)">
+          <div class="card-header" style="background:rgba(52,152,219,.05)">
+            <h3 style="color:var(--info)">${Icons.info} Setup — Base de datos en Supabase</h3>
+          </div>
+          <div class="card-body">
+            <p style="font-size:13px;margin:0 0 8px">Para que los datos se guarden en Supabase (no solo local), ejecutá este SQL en el <strong>SQL Editor</strong> de tu dashboard de Supabase:</p>
+            <div style="background:var(--gray-dark);color:#fff;padding:16px;border-radius:8px;font-size:12px;font-family:monospace;white-space:pre-wrap;overflow-x:auto;max-height:200px;overflow-y:auto;margin-bottom:12px" id="sql-setup-text">${this.getSetupSQL()}</div>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-primary btn-sm" id="btn-copy-sql">${Icons.plus} Copiar SQL</button>
+              <a class="btn btn-outline btn-sm" href="https://supabase.com/dashboard/project/exmnrhgiawwdhvpaiale/sql/new" target="_blank">${Icons.export} Abrir SQL Editor</a>
+            </div>
+            <p style="font-size:11px;color:var(--text-muted);margin:12px 0 0">Mientras no ejecutes el SQL, todo funciona con almacenamiento local. Cuando lo ejecutes, usá el botón "Sync" para subir los datos existentes a Supabase.</p>
+          </div>
+        </div>
       </div>`;
 
     // Eventos
@@ -158,6 +173,49 @@ const Institutions = {
     if (syncBtn) syncBtn.addEventListener('click', () => this.ejecutarSync());
     const bfBtn = document.getElementById('btn-backfill');
     if (bfBtn) bfBtn.addEventListener('click', () => this.ejecutarBackfill());
+
+    const copyBtn = document.getElementById('btn-copy-sql');
+    if (copyBtn) {
+      copyBtn.addEventListener('click', () => {
+        const text = document.getElementById('sql-setup-text')?.textContent;
+        if (text) {
+          navigator.clipboard.writeText(text).then(() => Utils.toast('SQL copiado al portapapeles', 'success')).catch(() => Utils.toast('No se pudo copiar', 'error'));
+        }
+      });
+    }
+  },
+
+  getSetupSQL() {
+    return `-- ACADEX — Crear tabla instituciones y columna institucion_id
+CREATE TABLE IF NOT EXISTS instituciones (
+  id TEXT PRIMARY KEY,
+  nombre TEXT NOT NULL,
+  direccion TEXT DEFAULT '',
+  telefono TEXT DEFAULT '',
+  email TEXT DEFAULT '',
+  activo BOOLEAN DEFAULT true,
+  creado TIMESTAMP DEFAULT NOW()
+);
+
+INSERT INTO instituciones (id, nombre) VALUES ('inst_default', 'Instituci\\u00f3n Principal') ON CONFLICT (id) DO NOTHING;
+
+ALTER TABLE config ADD COLUMN IF NOT EXISTS institucion_id TEXT DEFAULT 'inst_default';
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS institucion_id TEXT DEFAULT 'inst_default';
+ALTER TABLE periodos ADD COLUMN IF NOT EXISTS institucion_id TEXT DEFAULT 'inst_default';
+ALTER TABLE grados ADD COLUMN IF NOT EXISTS institucion_id TEXT DEFAULT 'inst_default';
+ALTER TABLE grupos ADD COLUMN IF NOT EXISTS institucion_id TEXT DEFAULT 'inst_default';
+ALTER TABLE materias ADD COLUMN IF NOT EXISTS institucion_id TEXT DEFAULT 'inst_default';
+ALTER TABLE estudiantes ADD COLUMN IF NOT EXISTS institucion_id TEXT DEFAULT 'inst_default';
+ALTER TABLE notas ADD COLUMN IF NOT EXISTS institucion_id TEXT DEFAULT 'inst_default';
+ALTER TABLE asistencia ADD COLUMN IF NOT EXISTS institucion_id TEXT DEFAULT 'inst_default';
+ALTER TABLE actividades ADD COLUMN IF NOT EXISTS institucion_id TEXT DEFAULT 'inst_default';
+ALTER TABLE notificaciones ADD COLUMN IF NOT EXISTS institucion_id TEXT DEFAULT 'inst_default';
+
+UPDATE usuarios SET rol = 'super_admin' WHERE email = 'jdmartinez596@gmail.com';
+
+INSERT INTO usuarios (id, nombre, apellido, email, documento, password, rol, institucion_id, activo)
+SELECT 'super_admin', 'Jesus', 'Martinez', 'jdmartinez596@gmail.com', 'SUPERADMIN', 'Juni@r12', 'super_admin', 'inst_default', true
+WHERE NOT EXISTS (SELECT 1 FROM usuarios WHERE email = 'jdmartinez596@gmail.com');`;
   },
 
   verInst(id) {
